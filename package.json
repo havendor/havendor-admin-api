@@ -4,7 +4,10 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "build": "npx tsc",
+    "start": "node dist/server.js",
+    "prepare": "node ./.husky/install.mjs"
   },
   "repository": {
     "type": "git",

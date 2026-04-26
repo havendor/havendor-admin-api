@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/havendor/havendor-admin-api#readme",
   "dependencies": {
-    "@havendor/server-core": "^0.2.0",
+    "@havendor/server-core": "^0.5.0",
     "@havendor/types": "^0.1.0",
     "@prisma/client": "^7.6.0",
     "compression": "^1.8.1",

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { routeRateConfig } from "../utility";
+import { routeRateConfig } from "../utility/index.js";
 
 const router: Router = Router();
 

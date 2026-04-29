@@ -1,7 +1,7 @@
 import { Logger, RedisClient } from "@havendor/server-core";
 import { Server } from "http";
-import { createApp } from "./app";
-import { appConfig } from "./config";
+import { createApp } from "./app.js";
+import { appConfig } from "./config/index.js";
 const app = createApp();
 
 const bootstrap = async () => {

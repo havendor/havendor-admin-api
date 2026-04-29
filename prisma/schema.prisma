@@ -1,0 +1,416 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ServerLocation {
+  ASIA_PACIFIC
+  FRANKFURT
+}
+
+/**
+ * ====================================
+ * Generic status for column
+ * ====================================
+ */
+
+enum ColumnGenericStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+  PENDING
+}
+
+/**
+ * ====================================
+ * Admin Model
+ * ====================================
+ */
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  DELETED
+  NEEDS_PASSWORD_CHANGE
+}
+
+model Admin {
+  id String @id @default(uuid())
+
+  employee_id          String     @unique //E.G. => A0001
+  first_name           String
+  last_name            String?
+  email                String     @unique
+  mobile               String?    @unique //E.G. => +8801712345678, with country code
+  alt_mobile           String?
+  password             String
+  status               UserStatus @default(ACTIVE)
+  profile_image        String?
+  identity_document    String?
+  bio                  String?
+  last_education       String?
+  present_address_id   String
+  present_address      Address    @relation("admin_present_address", fields: [present_address_id], references: [id])
+  permanent_address_id String
+  permanent_address    Address    @relation("admin_permanent_address", fields: [permanent_address_id], references: [id])
+  role_id              String
+  role                 Role       @relation(fields: [role_id], references: [id])
+  terminated_by_id     String?
+  terminated_by        Admin?     @relation("terminated_by", fields: [terminated_by_id], references: [id])
+  deleted_by_id        String?
+  deleted_by           Admin?     @relation("deleted_by", fields: [deleted_by_id], references: [id])
+  created_by_id        String?
+  created_by           Admin?     @relation("created_by", fields: [created_by_id], references: [id])
+  is_system            Boolean    @default(false)
+
+  updated_at         DateTime  @updatedAt
+  created_at         DateTime  @default(now())
+  last_lockout_at    DateTime?
+  lockout_count      Int?
+  terminated_at      DateTime?
+  termination_reason String?
+  deleted_at         DateTime?
+  delete_reason      String?
+
+  sessions           AdminSession[]
+  terminated_admins  Admin[]        @relation("terminated_by")
+  deleted_admins     Admin[]        @relation("deleted_by")
+  terminated_tenants Tenant[]       @relation("tenant_terminated_by")
+  deleted_tenants    Tenant[]       @relation("tenant_deleted_by")
+  created_admins     Admin[]        @relation("created_by")
+  created_roles      Role[]         @relation("created_roles")
+  deleted_shops      Shop[]         @relation("shop_deleted_by")
+
+  @@index([first_name])
+  @@index([last_name])
+  @@index([role_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("admins")
+}
+
+/**
+ * ====================================
+ * Admin session Model
+ * ====================================
+ */
+
+model AdminSession {
+  id       String @id @default(uuid())
+  admin_id String
+  admin    Admin  @relation(fields: [admin_id], references: [id])
+
+  refresh_token_hash String  @unique @db.Text
+  ip                 String?
+  os                 String?
+  os_version         String?
+  browser            String?
+  browser_version    String?
+
+  expires_in   DateTime
+  last_used_at DateTime? @updatedAt
+  created_at   DateTime  @default(now())
+
+  @@index([admin_id])
+  @@index([created_at])
+  @@map("admin_sessions")
+}
+
+/**
+ * ====================================
+ * Permissions Model
+ * ====================================
+ */
+
+model PermissionGroup {
+  id          String  @id
+  name        String  @unique
+  description String?
+
+  permissions Permission[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Permission {
+  id String @id
+
+  name        String          @unique
+  description String?
+  group_id    String
+  group       PermissionGroup @relation(fields: [group_id], references: [id])
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+/**
+ * ====================================
+ * Role Model
+ * ====================================
+ */
+
+model Role {
+  id          String              @id @default(uuid())
+  name        String              @unique
+  description String?
+  status      ColumnGenericStatus @default(ACTIVE)
+  is_system   Boolean             @default(false)
+
+  created_by_id String?
+  created_by    Admin?  @relation("created_roles", fields: [created_by_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  permissions RolePermission[]
+  admins      Admin[]
+
+  @@index([created_at])
+  @@map("roles")
+}
+
+/**
+ * ====================================
+ * Role And Permission Relation Model
+ * ====================================
+ */
+
+model RolePermission {
+  id String @id @default(uuid())
+
+  role_id       String
+  permission_id String
+
+  role       Role       @relation(fields: [role_id], references: [id])
+  permission Permission @relation(fields: [permission_id], references: [id])
+
+  @@unique([role_id, permission_id])
+  @@index([role_id])
+  @@index([permission_id])
+  @@map("role_permissions")
+}
+
+/**
+ * ====================================
+ * Address Model
+ * ====================================
+ */
+
+model Address {
+  id String @id @default(uuid())
+
+  address_name               String
+  full_name                  String?
+  mobile                     String?
+  email                      String?
+  address_line_1             String
+  address_line_2             String?
+  city                       String?
+  state                      String?
+  zip_code                   String?
+  country                    String?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+  admin_present_addresses    Admin[]  @relation("admin_present_address")
+  admin_permanent_addresses  Admin[]  @relation("admin_permanent_address")
+  tenant_present_addresses   Tenant[] @relation("tenant_present_address")
+  tenant_permanent_addresses Tenant[] @relation("tenant_permanent_address")
+
+  @@index([mobile])
+  @@index([email])
+  @@index([created_at])
+  @@index([address_name])
+  @@map("addresses")
+}
+
+/**
+ * ====================================
+ * Tenants
+ * ====================================
+ */
+
+model Tenant {
+  id String @id @default(uuid())
+
+  first_name           String
+  last_name            String?
+  email                String     @unique
+  mobile               String?    @unique //E.G. => +8801712345678, with country code
+  alt_mobile           String?
+  password             String
+  status               UserStatus @default(ACTIVE)
+  profile_image        String?
+  identity_document    String?
+  bio                  String?
+  last_education       String?
+  present_address_id   String
+  present_address      Address    @relation("tenant_present_address", fields: [present_address_id], references: [id])
+  permanent_address_id String
+  permanent_address    Address    @relation("tenant_permanent_address", fields: [permanent_address_id], references: [id])
+
+  terminated_by_id String?
+  terminated_by    Admin?  @relation("tenant_terminated_by", fields: [terminated_by_id], references: [id])
+  deleted_by_id    String?
+  deleted_by       Admin?  @relation("tenant_deleted_by", fields: [deleted_by_id], references: [id])
+
+  updated_at         DateTime        @updatedAt
+  created_at         DateTime        @default(now())
+  last_lockout_at    DateTime?
+  lockout_count      Int?
+  terminated_at      DateTime?
+  termination_reason String?
+  deleted_at         DateTime?
+  delete_reason      String?
+  sessions           TenantSession[]
+  shops              Shop[]
+
+  @@map("tenants")
+}
+
+/**
+ * ====================================
+ * Admin session Model
+ * ====================================
+ */
+
+model TenantSession {
+  id        String @id @default(uuid())
+  tenant_id String
+  tenant    Tenant @relation(fields: [tenant_id], references: [id])
+
+  refresh_token_hash String  @unique @db.Text
+  ip                 String?
+  os                 String?
+  os_version         String?
+  browser            String?
+  browser_version    String?
+
+  expires_in   DateTime
+  last_used_at DateTime? @updatedAt
+  created_at   DateTime  @default(now())
+
+  @@index([tenant_id])
+  @@index([created_at])
+  @@map("tenant_sessions")
+}
+
+/**
+ * ====================================
+ * Shop model
+ * ====================================
+ */
+
+model Shop {
+  id String @id @default(uuid())
+
+  tenant_id String
+  tenant    Tenant @relation(fields: [tenant_id], references: [id])
+
+  shop_name   String
+  identity    String @unique //E.G. => S00000001
+  description String @db.Text
+
+  status          ColumnGenericStatus @default(PENDING)
+  server_location ServerLocation      @default(ASIA_PACIFIC)
+
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime? @updatedAt
+  deleted_by_id String?
+  deleted_by    Admin?    @relation("shop_deleted_by", fields: [deleted_by_id], references: [id])
+
+  domains  ShopDomain[]
+  database ShopDatabase?
+
+  @@index([tenant_id])
+  @@index([shop_name])
+  @@map("shops")
+}
+
+enum ShopDomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDING // just added
+  DNS_PENDING // waiting for DNS propagation
+  VERIFIED // DNS is correct
+  ACTIVE // fully working
+  FAILED // something broke
+  DISABLED // manually turned off
+}
+
+enum DomainSSLStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  EXPIRED
+  FAILED
+}
+
+model ShopDomain {
+  id      String @id @default(uuid())
+  shop_id String
+  shop    Shop   @relation(fields: [shop_id], references: [id])
+
+  domain     String         @unique
+  type       ShopDomainType
+  is_primary Boolean        @default(false)
+
+  // 🔥 Domain lifecycle
+  status DomainStatus @default(PENDING)
+
+  // 🔥 DNS verification
+  dns_target      String? // e.g. cname target
+  dns_verified    Boolean   @default(false)
+  dns_verified_at DateTime?
+
+  // 🔥 SSL info
+  ssl_status     DomainSSLStatus @default(PENDING)
+  ssl_enabled    Boolean         @default(false)
+  ssl_expires_at DateTime?
+
+  // 🔥 DNS info
+
+  // 🔥 Operational fields
+  last_checked_at DateTime?
+  error_message   String?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @updatedAt
+
+  @@index([domain])
+  @@index([shop_id])
+  @@index([shop_id, is_primary, status])
+  @@map("shop_domains")
+}
+
+model ShopDatabase {
+  id      String @id @default(uuid())
+  shop_id String @unique
+  shop    Shop   @relation(fields: [shop_id], references: [id])
+
+  connection_url String
+  db_name        String
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime? @updatedAt
+
+  @@map("shop_databases")
+}

@@ -4,10 +4,11 @@ import cookieParser from "cookie-parser";
 import express, { Application } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { appConfig } from "./config";
-import { enableCors } from "./middleware";
-import { adminRoutes, internalRoutes, tenantRoutes } from "./routes";
+import { appConfig } from "./config/index.js";
+import { enableCors } from "./middleware/index.js";
+import { adminRoutes, internalRoutes, tenantRoutes } from "./routes/index.js";
 
+import "./const/permissions.js";
 export const createApp = (): Application => {
   const app: Application = express();
 

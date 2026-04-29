@@ -1,1 +1,1 @@
-export { default as enableCors } from "./enableCors";
+export { default as enableCors } from "./enableCors.js";

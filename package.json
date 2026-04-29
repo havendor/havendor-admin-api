@@ -7,7 +7,10 @@
     "dev": "nodemon",
     "build": "npx tsc",
     "start": "node dist/server.js",
-    "prepare": "node ./.husky/install.mjs"
+    "prepare": "node ./.husky/install.mjs",
+    "db:seed": "npx tsc && node dist/seed-runner.js",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
   },
   "repository": {
     "type": "git",
@@ -16,7 +19,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/havendor/havendor-admin-api/issues"
   },
@@ -24,7 +27,9 @@
   "dependencies": {
     "@havendor/server-core": "^0.5.0",
     "@havendor/types": "^0.1.0",
-    "@prisma/client": "^7.6.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -32,6 +37,7 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
+    "pg": "^8.20.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -39,12 +45,14 @@
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^1.2.0",
     "@eslint/markdown": "^8.0.1",
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.5.2",
+    "@types/pg": "^8.20.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "eslint": "^10.2.0",
@@ -56,8 +64,10 @@
     "lint-staged": "^16.4.0",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.1",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.0"
   }

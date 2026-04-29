@@ -1,1 +1,1 @@
-export * from "./route-rate-config";
+export * from "./route-rate-config.js";

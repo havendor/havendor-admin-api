@@ -1,6 +1,6 @@
 import cors, { CorsOptions } from "cors";
 import { RequestHandler } from "express";
-import { appConfig } from "../config";
+import { appConfig } from "../config/index.js";
 
 const enableCors = (): RequestHandler => {
   return (req, res, next) => {

@@ -49,3 +49,4 @@ logs
 
 # Ignore npmrc
 .npmrc
+/src/generated/prisma

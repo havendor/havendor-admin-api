@@ -1,8 +1,6 @@
 {
   "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll": "always",
-    "source.fixAll.eslint": "always",
     "source.organizeImports": "always"
   },
   "[typescriptreact]": {

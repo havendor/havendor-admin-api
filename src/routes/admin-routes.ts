@@ -1,9 +1,15 @@
 import { Router } from "express";
+import { AuthRoutes } from "../modules/admin/auth/auth.route.js";
 import { routeRateConfig } from "../utility/index.js";
 
 const router: Router = Router();
 
-const routes: { path: string; route: Router }[] = [];
+const routes: { path: string; route: Router }[] = [
+  {
+    path: "/auth",
+    route: AuthRoutes,
+  },
+];
 
 routes.forEach((route) => {
   const config =

@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "start": "node dist/server.js",
     "prepare": "node ./.husky/install.mjs",
-    "db:seed": "npx tsc && node dist/seed-runner.js",
+    "db:seed": "tsx -r tsconfig-paths/register ./src/seed-runner.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"
   },
@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/havendor/havendor-admin-api#readme",
   "dependencies": {
-    "@havendor/server-core": "^0.5.0",
+    "@havendor/server-core": "^0.12.1",
     "@havendor/types": "^0.1.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -36,8 +36,12 @@
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
+    "http-status": "^2.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "libphonenumber-js": "^1.12.42",
     "morgan": "^1.10.1",
     "pg": "^8.20.0",
+    "ua-parser-js": "^2.0.9",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -50,6 +54,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.5.2",
     "@types/pg": "^8.20.0",

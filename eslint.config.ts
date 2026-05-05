@@ -91,12 +91,12 @@ export default defineConfig([
 
   {
     rules: {
-      semi: "error",
+      semi: "warn",
       "prefer-const": "error",
-      "@typescript-eslint/no-unused-vars": "error",
-      "no-console": "warn",
+      "no-console": "error",
       "no-unused-expressions": "error",
       "no-unreachable": "error",
+      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/consistent-type-definitions": ["error", "type"],
     },
   },

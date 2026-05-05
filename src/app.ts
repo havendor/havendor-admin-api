@@ -33,13 +33,13 @@ export const createApp = (): Application => {
   });
 
   // Admin routes
-  app.use(adminRoutes);
+  app.use(`${appConfig.PATH_PREFIX}/v1/admin`, adminRoutes);
 
   // Internal routes
-  app.use(internalRoutes);
+  app.use(`${appConfig.PATH_PREFIX}/v1/internal`, internalRoutes);
 
   // Tenant routes
-  app.use(tenantRoutes);
+  app.use(`${appConfig.PATH_PREFIX}/v1/tenant`, tenantRoutes);
 
   // Not found handler
   app.use(notFoundHandler);

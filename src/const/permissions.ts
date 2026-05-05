@@ -122,10 +122,10 @@ export const PERMISSIONS = {
 // ====================================
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS).flatMap((group) =>
   Object.values(group),
-) as Permission[];
+) as TPermission[];
 
 // Type — useful for typed permission
 // checks in middleware / guards
 // ====================================
-export type Permission =
+export type TPermission =
   (typeof PERMISSIONS)[keyof typeof PERMISSIONS][keyof (typeof PERMISSIONS)[keyof typeof PERMISSIONS]];

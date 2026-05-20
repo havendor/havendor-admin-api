@@ -42,7 +42,7 @@ export const seedAdminPermissions = async () => {
 
     // 2. Create/Update Super Admin Role
     const superAdminRole = await prisma.role.upsert({
-      where: { name: "SUPER_ADMIN" },
+      where: { name: "SUPER ADMIN" },
       update: { is_system: true },
       create: {
         name: "SUPER_ADMIN",
@@ -92,7 +92,7 @@ export const seedAdminPermissions = async () => {
         role_id: superAdminRole.id,
       },
       create: {
-        employee_id: "A0001",
+        employee_id: "0001",
         first_name: "Super",
         last_name: "Admin",
         email: "admin@havendor.com",

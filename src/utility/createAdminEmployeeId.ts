@@ -15,7 +15,7 @@ export const createAdminEmployeeId = async (prisma: TPrismaClient) => {
   }
 
   const nextId = parseInt(lastAdmin.employee_id) + 1;
-  const padding = 8 - String(nextId).length;
+  const padding = 4 - String(nextId).length;
 
   return "0".repeat(padding) + nextId;
 };

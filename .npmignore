@@ -43,6 +43,3 @@ Thumbs.db
 
 # Ignore logs
 logs
-
-# Ignore npmrc
-.npmrc

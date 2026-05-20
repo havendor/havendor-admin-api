@@ -47,6 +47,5 @@ dist/**/*
 # Ignore logs
 logs
 
-# Ignore npmrc
-.npmrc
+
 /src/generated/prisma

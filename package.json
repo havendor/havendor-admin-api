@@ -5,14 +5,14 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "npx tsc && npx esbuild src/server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
-    "build:vercel": "prisma generate && npx tsc && npx esbuild src/server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
+    "build": "npx tsc && npx esbuild src/vercel.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "build:vercel": "prisma generate && npx tsc && npx esbuild src/vercel.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
     "start": "node dist/server.js",
     "prepare": "node ./.husky/install.mjs",
     "db:seed": "tsx -r tsconfig-paths/register ./src/seed-runner.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate"
   },
   "repository": {
     "type": "git",

@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { cacheAdmin } from "../cache/admin";
 import { appConfig } from "../config";
-import { TPermission } from "../const";
+import { ACTION, TPermission } from "../const";
 import { UserStatus } from "../generated/prisma";
 import { TAdminCache } from "../modules/admin/admin/admin.type";
 import { TAdminJWTPayload } from "../type";
@@ -11,11 +11,11 @@ import { prisma } from "../utility/prisma";
 
 export const adminAuthGuard =
   ({
-    allowedPermissions,
-    skipPasswordChange = false,
+    has_access_to,
+    skip_password_change = false,
   }: {
-    allowedPermissions?: TPermission[];
-    skipPasswordChange?: boolean;
+    has_access_to?: TPermission[];
+    skip_password_change?: boolean;
   }) =>
   async (req: Request, _res: Response, next: NextFunction) => {
     const authHeader = req.headers["authorization"];
@@ -24,7 +24,7 @@ export const adminAuthGuard =
     if (scheme?.toLowerCase() !== "bearer" || !token)
       throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid authorization format", null, {});
 
-    const payload = verifyJwt<TAdminJWTPayload>(token, appConfig.JWT.secret);
+    const payload = verifyJwt<TAdminJWTPayload>(token, appConfig.JWT.secret, ACTION.REFRESH_TOKEN);
 
     let user: TAdminCache | null = await cacheAdmin.getAdmin(payload.id);
 
@@ -47,7 +47,13 @@ export const adminAuthGuard =
         });
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "Unauthorized", null, {});
+        throw new ApiError(
+          httpStatus.UNAUTHORIZED,
+          "Unauthorized",
+          null,
+          null,
+          ACTION.REFRESH_TOKEN,
+        );
       }
 
       user = {
@@ -72,22 +78,22 @@ export const adminAuthGuard =
         "Your account has been deactivated",
         null,
         null,
-        "SIGN_OUT",
+        ACTION.SIGN_OUT,
       );
     }
 
-    if (user.status === "NEEDS_PASSWORD_CHANGE" && !skipPasswordChange) {
+    if (user.status === "NEEDS_PASSWORD_CHANGE" && !skip_password_change) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
         "Your account needs a password change",
         null,
         null,
-        "UPDATE_PASSWORD",
+        ACTION.UPDATE_PASSWORD,
       );
     }
 
-    if (allowedPermissions?.length) {
-      const hasPermission = allowedPermissions.some((permission) =>
+    if (has_access_to?.length) {
+      const hasPermission = has_access_to.some((permission) =>
         user?.role?.permissions?.includes(permission),
       );
 

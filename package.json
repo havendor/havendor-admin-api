@@ -5,8 +5,9 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "npx tsc && npx tsc-esm-fix",
-    "build:vercel": "prisma generate && npx tsc && npx tsc-esm-fix",
+    "build": "npx tsc && npx tsc-esm-fix && npm run postbuild",
+    "postbuild": "node ./scripts/copy-prisma-client.cjs",
+    "build:vercel": "prisma generate && npx tsc && npx tsc-esm-fix && npm run postbuild",
     "start": "node dist/server.js",
     "prepare": "node ./.husky/install.mjs",
     "db:seed": "tsx -r tsconfig-paths/register ./src/seed-runner.ts",

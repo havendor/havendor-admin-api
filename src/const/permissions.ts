@@ -6,6 +6,7 @@ export const PERMISSIONS = {
     CREATE: "create_admin",
     READ: "read_admin",
     UPDATE: "update_admin",
+    RESET_PASSWORD: "reset_password_admin",
     DELETE: "delete_admin",
     TERMINATE: "terminate_admin",
     RESTORE: "restore_admin", // reactivate a terminated/deleted admin
@@ -37,16 +38,6 @@ export const PERMISSIONS = {
     READ: "read_permission",
     ASSIGN: "assign_permission", // assign permissions to a role
     REVOKE: "revoke_permission", // remove permissions from a role
-  },
-
-  // ====================================
-  // Permission Group
-  // ====================================
-  PERMISSION_GROUP: {
-    CREATE: "create_permission_group",
-    READ: "read_permission_group",
-    UPDATE: "update_permission_group",
-    DELETE: "delete_permission_group",
   },
 
   // ====================================
@@ -127,5 +118,6 @@ export const ALL_PERMISSIONS = Object.values(PERMISSIONS).flatMap((group) =>
 // Type — useful for typed permission
 // checks in middleware / guards
 // ====================================
-export type TPermission =
-  (typeof PERMISSIONS)[keyof typeof PERMISSIONS][keyof (typeof PERMISSIONS)[keyof typeof PERMISSIONS]];
+type DeepValue<T> = T extends object ? DeepValue<T[keyof T]> : T;
+
+export type TPermission = DeepValue<typeof PERMISSIONS>;

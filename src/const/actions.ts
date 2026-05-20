@@ -1,0 +1,6 @@
+export const ACTION = {
+  SIGN_OUT: "SIGN_OUT",
+  UPDATE_PASSWORD: "UPDATE_PASSWORD",
+  REFRESH_TOKEN: "REFRESH_TOKEN",
+  SIGN_IN: "SIGN_IN",
+} as const;

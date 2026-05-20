@@ -11,8 +11,8 @@ import {
   IdentityType,
   UserGender,
   UserStatus,
-} from "../../../generated/prisma";
-import { addressSchema } from "../../../validations";
+} from "../../../generated/prisma/index.js";
+import { addressSchema } from "../../../validations/index.js";
 
 const admin = z
   .object({

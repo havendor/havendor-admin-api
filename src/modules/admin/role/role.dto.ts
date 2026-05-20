@@ -1,6 +1,6 @@
 import { commonQuerySchema } from "@havendor/server-core";
 import z from "zod";
-import { ColumnGenericStatus } from "../../../generated/prisma";
+import { ColumnGenericStatus } from "../../../generated/prisma/index.js";
 
 const role = z.object({
   name: z.string({ error: "Role name is required" }).min(1, {

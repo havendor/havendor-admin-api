@@ -1,7 +1,7 @@
 import { response } from "@havendor/server-core";
 import httpStatus from "http-status";
-import { catchAsync } from "../../../middleware";
-import { RoleService } from "./role.service";
+import { catchAsync } from "../../../middleware/index.js";
+import { RoleService } from "./role.service.js";
 
 const getRolePermission = catchAsync(async (_req, res) => {
   const result = await RoleService.getAllPermissionFromDB();

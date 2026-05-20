@@ -1,4 +1,4 @@
-import { appConfig } from "../../config";
+import { appConfig } from "../../config/index.js";
 
 type AdminResetPasswordEmailPayload = {
   adminName: string;

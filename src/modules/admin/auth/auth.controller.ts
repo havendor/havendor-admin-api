@@ -1,9 +1,9 @@
 import { response, setCookie } from "@havendor/server-core";
 import httpStatus from "http-status";
-import { appConfig } from "../../../config";
-import { catchAsync } from "../../../middleware";
-import { AuthService } from "./auth.service";
-import { TSignIn } from "./auth.type";
+import { appConfig } from "../../../config/index.js";
+import { catchAsync } from "../../../middleware/index.js";
+import { AuthService } from "./auth.service.js";
+import { TSignIn } from "./auth.type.js";
 
 const signIn = catchAsync(async (req, res) => {
   const body = req.body as TSignIn;

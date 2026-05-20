@@ -1,8 +1,8 @@
 import { validateRequest } from "@havendor/server-core";
 import { Router } from "express";
-import { adminAuthGuard } from "../../../middleware/adminAuthGuard";
-import { AuthController } from "./auth.controller";
-import { AuthDto } from "./auth.dto";
+import { adminAuthGuard } from "../../../middleware/index.js";
+import { AuthController } from "./auth.controller.js";
+import { AuthDto } from "./auth.dto.js";
 
 const router = Router();
 

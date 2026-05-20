@@ -1,6 +1,6 @@
 import { passwordSchema } from "@havendor/server-core";
 import z from "zod";
-import { appConfig } from "../../../config";
+import { appConfig } from "../../../config/index.js";
 
 const signIn = z.object({
   email: z.email({ error: "Email is required" }),

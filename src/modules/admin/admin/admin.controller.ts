@@ -1,8 +1,8 @@
 import { response } from "@havendor/server-core";
 import httpStatus from "http-status";
-import { catchAsync } from "../../../middleware";
-import { AdminService } from "./admin.service";
-import { TAdminListQuey } from "./admin.type";
+import { catchAsync } from "../../../middleware/index.js";
+import { AdminService } from "./admin.service.js";
+import { TAdminListQuey } from "./admin.type.js";
 
 const createAdmin = catchAsync(async (req, res) => {
   const result = await AdminService.createIntoDB(req.validated!.body);

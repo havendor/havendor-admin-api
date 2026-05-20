@@ -7,15 +7,21 @@ import {
 } from "@havendor/server-core";
 import bcrypt from "bcryptjs";
 import httpStatus from "http-status";
-import { cacheAdmin } from "../../../cache/admin";
-import { sendMail } from "../../../email/send-mail";
-import { adminCreatedTemplate } from "../../../email/templates";
-import { adminResetPasswordTemplate } from "../../../email/templates/admin-reset-password.template";
-import { Admin, Prisma, UserStatus } from "../../../generated/prisma";
-import { createAdminEmployeeId } from "../../../utility/createAdminEmployeeId";
-import { dbQueryWithPagination } from "../../../utility/dbQueryWithPagination";
-import { prisma } from "../../../utility/prisma";
-import { TAdminCache, TAdminInputSchema, TAdminListQuey, TAdminUpdateSchema } from "./admin.type";
+import { cacheAdmin } from "../../../cache/index.js";
+import { sendMail } from "../../../email/send-mail.js";
+import {
+  adminCreatedTemplate,
+  adminResetPasswordTemplate,
+} from "../../../email/templates/index.js";
+import { Admin, Prisma, UserStatus } from "../../../generated/prisma/index.js";
+import { createAdminEmployeeId, dbQueryWithPagination } from "../../../utility/index.js";
+import { prisma } from "../../../utility/prisma.js";
+import {
+  TAdminCache,
+  TAdminInputSchema,
+  TAdminListQuey,
+  TAdminUpdateSchema,
+} from "./admin.type.js";
 
 const createIntoDB = async (payload: TAdminInputSchema) => {
   return prisma.$transaction(

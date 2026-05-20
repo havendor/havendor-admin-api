@@ -1,10 +1,10 @@
 import { uploadAndModifyImages, validateRequest } from "@havendor/server-core";
 import { Router } from "express";
-import { appConfig } from "../../../config";
-import { PERMISSIONS } from "../../../const";
-import { adminAuthGuard } from "../../../middleware/adminAuthGuard";
-import { AdminController } from "./admin.controller";
-import { AdminDto } from "./admin.dto";
+import { appConfig } from "../../../config/index.js";
+import { PERMISSIONS } from "../../../const/index.js";
+import { adminAuthGuard } from "../../../middleware/index.js";
+import { AdminController } from "./admin.controller.js";
+import { AdminDto } from "./admin.dto.js";
 
 const router = Router();
 

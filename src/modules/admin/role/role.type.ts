@@ -1,7 +1,7 @@
 import z from "zod";
-import { TPermission } from "../../../const";
-import { Role } from "../../../generated/prisma";
-import { RoleDto } from "./role.dto";
+import { TPermission } from "../../../const/index.js";
+import { Role } from "../../../generated/prisma/index.js";
+import { RoleDto } from "./role.dto.js";
 
 export type TRoleCache = Pick<Role, "id" | "name" | "status"> & {
   permissions: TPermission[];

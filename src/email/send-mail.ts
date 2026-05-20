@@ -1,6 +1,6 @@
 import { sendEmail } from "@havendor/server-core";
-import { appConfig } from "../config";
-import { TEmailPayload } from "../type";
+import { appConfig } from "../config/index.js";
+import { TEmailPayload } from "../type/index.js";
 
 export const sendMail = async (
   payload: TEmailPayload,

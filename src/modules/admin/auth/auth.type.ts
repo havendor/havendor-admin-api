@@ -1,5 +1,5 @@
 import z from "zod";
-import { AuthDto } from "./auth.dto";
+import { AuthDto } from "./auth.dto.js";
 
 export type TSignIn = z.infer<typeof AuthDto.signIn>["body"];
 export type TChangePassword = z.infer<typeof AuthDto.changePassword>["body"];

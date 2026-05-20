@@ -1,7 +1,7 @@
 import z from "zod";
-import { Admin } from "../../../generated/prisma";
-import { TRoleCache } from "../role/role.type";
-import { AdminDto } from "./admin.dto";
+import { Admin } from "../../../generated/prisma/index.js";
+import { TRoleCache } from "../role/role.type.js";
+import { AdminDto } from "./admin.dto.js";
 
 export type TAdminInputSchema = z.infer<typeof AdminDto.create>["body"];
 export type TAdminUpdateSchema = z.infer<typeof AdminDto.update>["body"];

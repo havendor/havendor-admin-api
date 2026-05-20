@@ -1,9 +1,9 @@
 import { validateRequest } from "@havendor/server-core";
 import { Router } from "express";
-import { PERMISSIONS } from "../../../const";
-import { adminAuthGuard } from "../../../middleware/adminAuthGuard";
-import { RoleController } from "./role.controller";
-import { RoleDto } from "./role.dto";
+import { PERMISSIONS } from "../../../const/index.js";
+import { adminAuthGuard } from "../../../middleware/index.js";
+import { RoleController } from "./role.controller.js";
+import { RoleDto } from "./role.dto.js";
 
 const router = Router();
 

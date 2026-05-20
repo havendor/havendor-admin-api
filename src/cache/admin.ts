@@ -1,5 +1,5 @@
 import { RedisClient } from "@havendor/server-core";
-import { TAdminCache } from "../modules/admin/admin/admin.type";
+import { TAdminCache } from "../modules/admin/admin/admin.type.js";
 
 const getAdmin = async (id: string): Promise<TAdminCache | null> => {
   const user = await RedisClient.get<TAdminCache>(`admin:${id}`);

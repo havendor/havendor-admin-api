@@ -1,13 +1,13 @@
 import { ApiError, verifyJwt } from "@havendor/server-core";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import { cacheAdmin } from "../cache/admin";
-import { appConfig } from "../config";
-import { ACTION, TPermission } from "../const";
-import { UserStatus } from "../generated/prisma";
-import { TAdminCache } from "../modules/admin/admin/admin.type";
-import { TAdminJWTPayload } from "../type";
-import { prisma } from "../utility/prisma";
+import { cacheAdmin } from "../cache/index.js";
+import { appConfig } from "../config/index.js";
+import { ACTION, TPermission } from "../const/index.js";
+import { UserStatus } from "../generated/prisma/index.js";
+import { TAdminCache } from "../modules/admin/admin/admin.type.js";
+import { TAdminJWTPayload } from "../type/index.js";
+import { prisma } from "../utility/index.js";
 
 export const adminAuthGuard =
   ({

@@ -1,11 +1,9 @@
-import httpStatus from "http-status";
-import { prisma } from "../../../utility/prisma";
-import { TAdminCache } from "../admin/admin.type";
-
 import { ApiError, buildImageUrl } from "@havendor/server-core";
-import { ColumnGenericStatus, Prisma } from "../../../generated/prisma";
-import { dbQueryWithPagination } from "../../../utility/dbQueryWithPagination";
-import { TRoleInputSchema, TRoleListQuerySchema, TRoleUpdateSchema } from "./role.type";
+import httpStatus from "http-status";
+import { ColumnGenericStatus, Prisma } from "../../../generated/prisma/index.js";
+import { dbQueryWithPagination, prisma } from "../../../utility/index.js";
+import { TAdminCache } from "../admin/admin.type.js";
+import { TRoleInputSchema, TRoleListQuerySchema, TRoleUpdateSchema } from "./role.type.js";
 
 const getAllPermissionFromDB = async () => {
   return await prisma.permissionGroup.findMany({

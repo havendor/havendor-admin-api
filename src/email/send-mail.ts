@@ -2,8 +2,10 @@ import { sendEmail } from "@havendor/server-core";
 import { appConfig } from "../config";
 import { TEmailPayload } from "../type";
 
-export const sendMail = async (payload: TEmailPayload) => {
-  await sendEmail(
+export const sendMail = async (
+  payload: TEmailPayload,
+): Promise<{ status: boolean; message: string }> => {
+  const result = await sendEmail(
     {
       host: appConfig.SMTP.host,
       port: appConfig.SMTP.port,
@@ -12,11 +14,13 @@ export const sendMail = async (payload: TEmailPayload) => {
       secure: false,
     },
     {
-      from: payload.from || "[EMAIL_ADDRESS]",
+      from: `no-replay@${appConfig.EMAIL_DOMAIN}`,
       to: payload.to,
       subject: payload.subject,
       text: payload.text,
       html: payload.html,
     },
   );
+
+  return { status: result.success, message: result.messageId || "" };
 };

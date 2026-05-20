@@ -44,34 +44,79 @@ enum UserStatus {
   NEEDS_PASSWORD_CHANGE
 }
 
+enum UserGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum IdentityType {
+  PASSPORT
+  NATIONAL_ID
+  DRIVING_LICENSE
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum EmergencyContactRelation {
+  FATHER
+  MOTHER
+  SPOUSE
+  BROTHER
+  SISTER
+  SON
+  DAUGHTER
+  OTHER
+}
+
 model Admin {
   id String @id @default(uuid())
 
-  employee_id          String     @unique //E.G. => A0001
-  first_name           String
-  last_name            String?
-  email                String     @unique
-  mobile               String?    @unique //E.G. => +8801712345678, with country code
-  alt_mobile           String?
-  password             String
-  status               UserStatus @default(ACTIVE)
-  profile_image        String?
-  identity_document    String?
-  bio                  String?
-  last_education       String?
-  present_address_id   String
-  present_address      Address    @relation("admin_present_address", fields: [present_address_id], references: [id])
-  permanent_address_id String
-  permanent_address    Address    @relation("admin_permanent_address", fields: [permanent_address_id], references: [id])
-  role_id              String
-  role                 Role       @relation(fields: [role_id], references: [id])
-  terminated_by_id     String?
-  terminated_by        Admin?     @relation("terminated_by", fields: [terminated_by_id], references: [id])
-  deleted_by_id        String?
-  deleted_by           Admin?     @relation("deleted_by", fields: [deleted_by_id], references: [id])
-  created_by_id        String?
-  created_by           Admin?     @relation("created_by", fields: [created_by_id], references: [id])
-  is_system            Boolean    @default(false)
+  employee_id                String                    @unique //E.G. => A0001
+  first_name                 String
+  last_name                  String?
+  email                      String                    @unique
+  mobile                     String?                   @unique //E.G. => +8801712345678, with country code
+  alt_mobile                 String?
+  emergency_contact_name     String?
+  emergency_contact_mobile   String?
+  emergency_contact_relation EmergencyContactRelation?
+  blood_group                BloodGroup?
+  date_of_birth              DateTime?
+  gender                     UserGender?
+  identity_no                String?                   @unique
+  identity_type              IdentityType?
+
+  password                 String
+  status                   UserStatus @default(ACTIVE)
+  profile_image            String?
+  profile_image_bucket     String?
+  identity_document        String?
+  identity_document_bucket String?
+  bio                      String?
+  last_education           String?
+  present_address_id       String
+  present_address          Address    @relation("admin_present_address", fields: [present_address_id], references: [id])
+  permanent_address_id     String
+  permanent_address        Address    @relation("admin_permanent_address", fields: [permanent_address_id], references: [id])
+  role_id                  String
+  role                     Role       @relation(fields: [role_id], references: [id])
+  terminated_by_id         String?
+  terminated_by            Admin?     @relation("terminated_by", fields: [terminated_by_id], references: [id])
+  deleted_by_id            String?
+  deleted_by               Admin?     @relation("deleted_by", fields: [deleted_by_id], references: [id])
+  created_by_id            String?
+  created_by               Admin?     @relation("created_by", fields: [created_by_id], references: [id])
+  is_system                Boolean    @default(false)
 
   updated_at         DateTime  @updatedAt
   created_at         DateTime  @default(now())
@@ -141,6 +186,8 @@ model PermissionGroup {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("permission_groups")
 }
 
 model Permission {
@@ -253,7 +300,7 @@ model Tenant {
   password             String
   status               UserStatus @default(ACTIVE)
   profile_image        String?
-  identity_document    String?
+  profile_image_bucket String?
   bio                  String?
   last_education       String?
   present_address_id   String

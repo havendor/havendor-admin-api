@@ -20,6 +20,9 @@ const envVarsZodSchema = z.object({
     .optional()
     .default("2592000") // 30 days in seconds - 30*24*60*60
     .transform((value) => Number(value)),
+  EMAIL_DOMAIN: z.string({ error: "EMAIL_DOMAIN is required" }),
+  S3_PRIVATE_BUCKET: z.string({ error: "S3_PRIVATE_BUCKET is required" }),
+  STAGING_FRONTEND_URL: z.url({ error: "STAGING_FRONTEND_URL is required" }),
 });
 
 const envVars = z.intersection(envVarsZodSchema, coreAppConfigZodSchema).parse(process.env);
@@ -52,6 +55,12 @@ const appConfig = {
   },
   REFRESH_EXPIRES: envVars.REFRESH_EXPIRES,
   REMEMBER_ME_EXPIRES: envVars.REMEMBER_ME_EXPIRES,
+  EMAIL_DOMAIN: envVars.EMAIL_DOMAIN,
+  S3: {
+    PRIVATE_BUCKET: envVars.S3_PRIVATE_BUCKET,
+    DEFAULT_BUCKET: envVars.S3_DEFAULT_BUCKET,
+  },
+  STAGING_FRONTEND_URL: envVars.STAGING_FRONTEND_URL,
 } as const;
 
 export default appConfig;

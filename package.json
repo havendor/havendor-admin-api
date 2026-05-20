@@ -11,7 +11,8 @@
     "prepare": "node ./.husky/install.mjs",
     "db:seed": "tsx -r tsconfig-paths/register ./src/seed-runner.ts",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "repository": {
     "type": "git",

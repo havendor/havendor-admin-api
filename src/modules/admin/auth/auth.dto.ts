@@ -36,4 +36,9 @@ export const AuthDto = {
   refresh: z.object({
     cookies: refresh,
   }),
+  deleteSession: z.object({
+    params: z.object({
+      id: z.string(),
+    }),
+  }),
 };

@@ -78,12 +78,34 @@ const signOut = catchAsync(async (req, res) => {
 });
 
 const changePassword = catchAsync(async (req, res) => {
-  await AuthService.changePassword(req.body, req.admin!);
+  await AuthService.changePassword(req.validated!.body, req.admin!);
 
   return response(res, {
     status_code: httpStatus.OK,
     success: true,
     message: "Password changed successfully",
+  });
+});
+
+const allSessions = catchAsync(async (req, res) => {
+  const data = await AuthService.allSessions(req.admin!);
+
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "All sessions fetched successfully",
+    data,
+  });
+});
+
+const deleteSession = catchAsync(async (req, res) => {
+  const data = await AuthService.deleteSession(req.validated!.params!.id, req.admin!);
+
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "Session deleted successfully",
+    data,
   });
 });
 
@@ -93,4 +115,6 @@ export const AuthController = {
   me,
   signOut,
   changePassword,
+  allSessions,
+  deleteSession,
 };

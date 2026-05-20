@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { UAParser } from "ua-parser-js";
 import { cacheAdmin } from "../../../cache/admin";
 import { appConfig } from "../../../config";
+import { ACTION } from "../../../const";
 import { UserStatus } from "../../../generated/prisma";
 import { prisma } from "../../../utility/prisma";
 import { TAdminCache } from "../admin/admin.type";
@@ -116,50 +117,74 @@ const signIn = async (payload: TSignIn, request: Request) => {
 };
 
 const refresh = async (payload: TRefresh) => {
-  return prisma.$transaction(async (tx) => {
-    const token = payload[appConfig.ADMIN_REFRESH_TOKEN_NAME];
+  const FAILED_TO_REFRESH = "Failed to refresh token";
 
-    const hashToken = hash({ token });
+  const token = payload[appConfig.ADMIN_REFRESH_TOKEN_NAME];
 
-    const session = await tx.adminSession.findFirst({
-      where: { refresh_token_hash: hashToken },
-      include: { admin: true },
-    });
+  const hashToken = hash({ token });
 
-    if (!session) throw new ApiError(httpStatus.NOT_FOUND, "Session not found", null, {});
+  const session = await prisma.adminSession.findFirst({
+    where: { refresh_token_hash: hashToken },
+    include: { admin: true },
+  });
 
-    if (session.expires_in < new Date(Date.now()))
-      throw new ApiError(httpStatus.UNAUTHORIZED, "Session expired", null, {});
-
-    if (["INACTIVE", "DELETED", "TERMINATED"].includes(session.admin.status))
-      throw new ApiError(httpStatus.UNAUTHORIZED, "Session expired", null, {});
-
-    const newToken = jwt.sign(
-      { id: session.admin.id, role_id: session.admin.role_id },
-      appConfig.JWT.secret,
-      {
-        expiresIn: appConfig.JWT.access_expires,
-      },
+  if (!session)
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      FAILED_TO_REFRESH,
+      "Session not found",
+      null,
+      ACTION.SIGN_IN,
     );
 
-    const newRefreshToken = crypto.randomBytes(64).toString("hex");
+  if (session.expires_in < new Date())
+    throw new ApiError(
+      httpStatus.UNAUTHORIZED,
+      FAILED_TO_REFRESH,
+      "Session expired",
+      null,
+      ACTION.SIGN_IN,
+    );
 
-    const newRefreshTokenHash = hash({ token: newRefreshToken });
+  if (["INACTIVE", "DELETED", "TERMINATED"].includes(session.admin.status))
+    throw new ApiError(
+      httpStatus.UNAUTHORIZED,
+      FAILED_TO_REFRESH,
+      "Session expired",
+      null,
+      ACTION.SIGN_IN,
+    );
 
-    const updatedSession = await tx.adminSession.update({
-      where: { id: session.id },
-      data: {
-        refresh_token_hash: newRefreshTokenHash,
-        last_used_at: new Date(Date.now()),
-      },
-    });
+  // Generate outside transaction
+  const accessToken = jwt.sign(
+    {
+      id: session.admin.id,
+      role_id: session.admin.role_id,
+    },
+    appConfig.JWT.secret,
+    {
+      expiresIn: appConfig.JWT.access_expires,
+    },
+  );
 
-    return {
-      accessToken: newToken,
-      refreshToken: newRefreshToken,
-      refreshTokenExpiresIn: updatedSession.expires_in.getTime() - Date.now(),
-    };
+  const refreshToken = crypto.randomBytes(64).toString("hex");
+
+  const refreshTokenHash = hash({ token: refreshToken });
+
+  // Only DB update inside transaction
+  await prisma.adminSession.update({
+    where: { id: session.id },
+    data: {
+      refresh_token_hash: refreshTokenHash,
+      last_used_at: new Date(),
+    },
   });
+
+  return {
+    accessToken,
+    refreshToken,
+    refreshTokenExpiresIn: session.expires_in.getTime() - Date.now(),
+  };
 };
 
 const me = async (id: string) => {
@@ -177,29 +202,45 @@ const me = async (id: string) => {
                 },
               },
             },
+            omit: { role_id: true, permission_id: true },
           },
+        },
+        omit: {
+          description: true,
+          status: true,
+          is_system: true,
+          created_at: true,
+          updated_at: true,
         },
       },
     },
-    omit: { password: true },
+    omit: {
+      password: true,
+      identity_document_bucket: true,
+      identity_document: true,
+      profile_image_bucket: true,
+      present_address_id: true,
+      permanent_address_id: true,
+      role_id: true,
+      updated_at: true,
+      deleted_at: true,
+      created_at: true,
+      deleted_by_id: true,
+      delete_reason: true,
+      terminated_at: true,
+      terminated_by_id: true,
+      termination_reason: true,
+      created_by_id: true,
+    },
   });
 
   if (!user) throw new ApiError(httpStatus.NOT_FOUND, "No admin found with this id", null, {});
 
-  const profileImage =
-    user?.profile_image && user.profile_image.trim() !== ""
-      ? buildImageUrl(user.profile_image)
-      : null;
-
-  const identityDocument =
-    user?.identity_document && user.identity_document.trim() !== ""
-      ? buildImageUrl(user.identity_document)
-      : null;
+  const profileImage = buildImageUrl(user.profile_image);
 
   user = {
     ...user,
     profile_image: profileImage,
-    identity_document: identityDocument,
   };
 
   return user;
@@ -207,14 +248,15 @@ const me = async (id: string) => {
 
 const signOut = async (payload: TAdminCache) => {
   return prisma.$transaction(async (tx) => {
-    await tx.adminSession.delete({
-      where: {
-        id: payload.session_id,
-        admin_id: payload.id,
-      },
-    });
-
-    await cacheAdmin.deleteAdmin(payload.id);
+    await Promise.all([
+      tx.adminSession.delete({
+        where: {
+          id: payload.session_id,
+          admin_id: payload.id,
+        },
+      }),
+      cacheAdmin.deleteAdmin(payload.id),
+    ]);
   });
 };
 
@@ -239,7 +281,7 @@ const changePassword = async (payload: TChangePassword, user: TAdminCache) => {
         "Your account has been deactivated",
         null,
         null,
-        "SIGN_OUT",
+        ACTION.SIGN_OUT,
       );
     }
 
@@ -262,10 +304,27 @@ const changePassword = async (payload: TChangePassword, user: TAdminCache) => {
   });
 };
 
+const allSessions = async (user: TAdminCache) => {
+  const data = await prisma.adminSession.findMany({
+    where: { admin_id: user.id },
+    omit: { refresh_token_hash: true, admin_id: true },
+    orderBy: {
+      created_at: "asc",
+    },
+  });
+  return data;
+};
+
+const deleteSession = async (sessionId: string, user: TAdminCache) => {
+  await prisma.adminSession.delete({ where: { admin_id: user.id, id: sessionId } });
+};
+
 export const AuthService = {
   signIn,
   refresh,
   me,
   signOut,
   changePassword,
+  allSessions,
+  deleteSession,
 };

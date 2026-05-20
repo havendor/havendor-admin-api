@@ -45,7 +45,7 @@ export const dbQueryWithPagination = async <Result>({
 
   const total_pages = Math.ceil(total_records / limit);
 
-  const meta: TMeta = {
+  const meta: any = {
     current_page: page,
     per_page: limit,
     total_pages,

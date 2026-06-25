@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AdminRoute } from "../modules/admin/admin/admin.route.js";
 import { AuthRoutes } from "../modules/admin/auth/auth.route.js";
 import { RoleRoute } from "../modules/admin/role/role.route.js";
+import { TenantRoute } from "../modules/admin/tenant/tenant.route.js";
 import { routeRateConfig } from "../utility/index.js";
 
 const router: Router = Router();
@@ -18,6 +19,10 @@ const routes: { path: string; route: Router }[] = [
   {
     path: "/role",
     route: RoleRoute,
+  },
+  {
+    path: "/tenant",
+    route: TenantRoute,
   },
 ];
 

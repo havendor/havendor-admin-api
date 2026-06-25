@@ -22,7 +22,13 @@ export const adminAuthGuard =
 
     const [scheme, token] = authHeader?.split(" ") || [];
     if (scheme?.toLowerCase() !== "bearer" || !token)
-      throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid authorization format", null, {});
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Invalid authorization format",
+        null,
+        null,
+        ACTION.REFRESH_TOKEN,
+      );
 
     const payload = verifyJwt<TAdminJWTPayload>(token, appConfig.JWT.secret, ACTION.REFRESH_TOKEN);
 

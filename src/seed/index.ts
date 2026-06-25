@@ -45,7 +45,7 @@ export const seedAdminPermissions = async () => {
       where: { name: "SUPER ADMIN" },
       update: { is_system: true },
       create: {
-        name: "SUPER_ADMIN",
+        name: "SUPER ADMIN",
         description: "Full system access with all permissions",
         is_system: true,
       },

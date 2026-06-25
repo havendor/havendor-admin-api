@@ -110,6 +110,7 @@ model Admin {
   permanent_address        Address    @relation("admin_permanent_address", fields: [permanent_address_id], references: [id])
   role_id                  String
   role                     Role       @relation(fields: [role_id], references: [id])
+  deleted_roles            Role[]     @relation("deleted_roles")
   terminated_by_id         String?
   terminated_by            Admin?     @relation("terminated_by", fields: [terminated_by_id], references: [id])
   deleted_by_id            String?
@@ -212,7 +213,7 @@ model Permission {
 model Role {
   id          String              @id @default(uuid())
   name        String              @unique
-  description String?
+  description String?             @db.Text
   status      ColumnGenericStatus @default(ACTIVE)
   is_system   Boolean             @default(false)
 
@@ -225,7 +226,12 @@ model Role {
   permissions RolePermission[]
   admins      Admin[]
 
+  deleted_at    DateTime?
+  deleted_by_id String?
+  deleted_by    Admin?    @relation("deleted_roles", fields: [deleted_by_id], references: [id])
+
   @@index([created_at])
+  @@index([deleted_at])
   @@map("roles")
 }
 

@@ -10,6 +10,7 @@ declare module "express-serve-static-core" {
     userAgent?: string;
     tenantId?: string;
     admin?: TAdminCache;
+    tenant?: any; // Added for tenant auth module
     files?: MulterS3File[];
     file?: MulterS3File;
     validated?: {

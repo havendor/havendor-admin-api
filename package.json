@@ -1,6 +1,6 @@
 {
   "name": "havendor-admin-api",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/havendor/havendor-admin-api#readme",
   "dependencies": {
-    "@havendor/server-core": "^0.23.0",
+    "@havendor/server-core": "^0.25.0",
     "@havendor/types": "^0.4.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",

@@ -1,4 +1,4 @@
-import { mobileNumberSchema } from "@havendor/server-core";
+import { mobileNumberOptionalSchema } from "@havendor/server-core";
 import z from "zod";
 
 export const addressSchema = () =>
@@ -7,7 +7,7 @@ export const addressSchema = () =>
       message: "Address name can not be empty.",
     }),
     full_name: z.string().nullish(),
-    mobile: mobileNumberSchema().nullish(),
+    mobile: mobileNumberOptionalSchema,
     email: z.email().nullish(),
     address_line_1: z.string({ error: "Address line 1 is required" }).min(1, {
       message: "Address line 1 can not be empty.",

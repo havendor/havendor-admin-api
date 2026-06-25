@@ -80,7 +80,55 @@ const updateIntoDB = async (id: string, data: TRoleUpdateSchema) => {
   return result;
 };
 
-const deleteFromDB = async () => {};
+const deleteFromDB = async (id: string, user: TAdminCache) => {
+  const existingRole = await prisma.role.findUnique({
+    where: {
+      id,
+      status: {
+        not: ColumnGenericStatus.DELETED,
+      },
+    },
+    include: {
+      _count: {
+        select: {
+          admins: true,
+        },
+      },
+    },
+  });
+  if (!existingRole) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Failed to delete role", "Role not found");
+  }
+
+  if (existingRole?._count?.admins > 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Failed to delete role", "Role has admins");
+  }
+
+  if (existingRole.is_system) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Failed to delete role",
+      "System role can not be deleted",
+    );
+  }
+
+  const result = await prisma.role.update({
+    where: {
+      id,
+    },
+    data: {
+      status: ColumnGenericStatus.DELETED,
+      deleted_at: new Date(),
+      deleted_by: {
+        connect: {
+          id: user.id,
+        },
+      },
+    },
+  });
+
+  return result;
+};
 
 const getSingleFromDB = async (id: string) => {
   let result = await prisma.role.findUnique({
@@ -180,14 +228,11 @@ const getAllFromDB = async (query: TRoleListQuerySchema) => {
   return { data, meta };
 };
 
-const toggleStatusIntoDB = async () => {};
-
 export const RoleService = {
   createIntoDB,
   updateIntoDB,
   deleteFromDB,
   getSingleFromDB,
   getAllFromDB,
-  toggleStatusIntoDB,
   getAllPermissionFromDB,
 };

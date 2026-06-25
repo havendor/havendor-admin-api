@@ -1,7 +1,7 @@
 import {
   commonQuerySchema,
   fileSchema,
-  mobileNumberOptionalNullableSchema,
+  mobileNumberOptionalSchema,
   mobileNumberSchema,
 } from "@havendor/server-core";
 import z from "zod";
@@ -21,10 +21,10 @@ const admin = z
     }),
     last_name: z.string().nullish(),
     email: z.email({ error: "Email is required" }),
-    mobile: mobileNumberSchema(),
-    alt_mobile: mobileNumberOptionalNullableSchema().nullable().optional(),
+    mobile: mobileNumberSchema,
+    alt_mobile: mobileNumberOptionalSchema,
     emergency_contact_name: z.string().nullish(),
-    emergency_contact_mobile: mobileNumberOptionalNullableSchema().nullable().optional(),
+    emergency_contact_mobile: mobileNumberOptionalSchema,
     emergency_contact_relation: z.enum(EmergencyContactRelation).nullish(),
     blood_group: z.enum(BloodGroup).nullish(),
     date_of_birth: z.date().nullish(),
@@ -82,12 +82,12 @@ const updateStatus = z.object({
 });
 
 const list = z.object({
-  query: z.intersection(
-    commonQuerySchema,
-    z.object({
-      status: z.enum(UserStatus).optional(),
-    }),
-  ),
+  query: commonQuerySchema.safeExtend({
+    status: z.enum(UserStatus).optional(),
+    search: z.string().optional(),
+    id: z.uuid().optional(),
+    ids: z.array(z.uuid()).optional(),
+  }),
 });
 
 const remove = z.object({

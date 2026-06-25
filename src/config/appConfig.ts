@@ -1,4 +1,4 @@
-import { coreAppConfigZodSchema } from "@havendor/server-core";
+import { envVars as coreAppEnvVars } from "@havendor/server-core";
 import { z } from "zod";
 
 const envVarsZodSchema = z.object({
@@ -25,7 +25,10 @@ const envVarsZodSchema = z.object({
   STAGING_FRONTEND_URL: z.url({ error: "STAGING_FRONTEND_URL is required" }),
 });
 
-const envVars = z.intersection(envVarsZodSchema, coreAppConfigZodSchema).parse(process.env);
+const parsedCoreVars = coreAppEnvVars;
+const parsedAppVars = envVarsZodSchema.parse(process.env);
+
+const envVars = { ...parsedCoreVars, ...parsedAppVars };
 
 const appConfig = {
   NODE_ENV: envVars.NODE_ENV,

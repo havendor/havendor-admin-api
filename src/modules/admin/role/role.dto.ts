@@ -8,7 +8,9 @@ const role = z.object({
   }),
   description: z.string({ error: "Role description is required" }).nullish().default(null),
   status: z
-    .enum(ColumnGenericStatus, { error: "Role status is required" })
+    .enum([ColumnGenericStatus.ACTIVE, ColumnGenericStatus.INACTIVE, ColumnGenericStatus.PENDING], {
+      error: "Role status is required",
+    })
     .default(ColumnGenericStatus.ACTIVE),
   is_system: z
     .boolean()

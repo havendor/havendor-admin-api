@@ -6,7 +6,7 @@ type AdminCreatedEmailPayload = {
   temporaryPassword: string;
 };
 
-const loginUrl = `${appConfig.STAGING_FRONTEND_URL}/auth/sign-in`;
+const loginUrl = `${appConfig.STAGING_FRONTEND_URL}/admin/auth/sign-in`;
 
 export const adminCreatedTemplate = ({
   adminName,

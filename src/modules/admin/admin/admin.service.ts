@@ -214,7 +214,7 @@ const readAllFromDB = async (query: TAdminListQuey) => {
   };
 
   // Search
-  if (query.search) {
+  if (query?.search) {
     where.OR = [
       { first_name: { contains: query.search, mode: "insensitive" } },
       { last_name: { contains: query.search, mode: "insensitive" } },
@@ -224,15 +224,15 @@ const readAllFromDB = async (query: TAdminListQuey) => {
   }
 
   // Status
-  if (query.status) {
+  if (query?.status) {
     where.status = query.status;
   }
 
-  if (query.id) {
+  if (query?.id) {
     where.id = query.id.toString();
   }
 
-  if (query.ids?.length) {
+  if (query?.ids?.length) {
     where.id = {
       in: query.ids.map((id) => id.toString()),
     };

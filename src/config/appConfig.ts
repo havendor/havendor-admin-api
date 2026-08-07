@@ -23,6 +23,18 @@ const envVarsZodSchema = z.object({
   EMAIL_DOMAIN: z.string({ error: "EMAIL_DOMAIN is required" }),
   S3_PRIVATE_BUCKET: z.string({ error: "S3_PRIVATE_BUCKET is required" }),
   STAGING_FRONTEND_URL: z.url({ error: "STAGING_FRONTEND_URL is required" }),
+  STRIPE_SECRET_KEY: z.string().optional().default(""),
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(""),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional().default(""),
+  SSLCOMMERZ_STORE_ID: z.string().optional().default(""),
+  SSLCOMMERZ_STORE_PASSWORD: z.string().optional().default(""),
+  SSLCOMMERZ_IS_LIVE: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((v) => v === "true" || v === "1"),
+  TENANT_FRONTEND_URL: z.string().optional().default("http://localhost:3000"),
+  PUBLIC_API_BASE_URL: z.string().optional().default("http://localhost:5000"),
 });
 
 const parsedCoreVars = coreAppEnvVars;
@@ -64,6 +76,18 @@ const appConfig = {
     DEFAULT_BUCKET: envVars.S3_DEFAULT_BUCKET,
   },
   STAGING_FRONTEND_URL: envVars.STAGING_FRONTEND_URL,
+  TENANT_FRONTEND_URL: envVars.TENANT_FRONTEND_URL,
+  PUBLIC_API_BASE_URL: envVars.PUBLIC_API_BASE_URL,
+  STRIPE: {
+    secret_key: envVars.STRIPE_SECRET_KEY,
+    webhook_secret: envVars.STRIPE_WEBHOOK_SECRET,
+    publishable_key: envVars.STRIPE_PUBLISHABLE_KEY,
+  },
+  SSLCOMMERZ: {
+    store_id: envVars.SSLCOMMERZ_STORE_ID,
+    store_password: envVars.SSLCOMMERZ_STORE_PASSWORD,
+    is_live: envVars.SSLCOMMERZ_IS_LIVE,
+  },
 } as const;
 
 export default appConfig;

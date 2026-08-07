@@ -71,6 +71,30 @@ export const PERMISSIONS = {
   },
 
   // ====================================
+  // Server (app / hosting nodes for shops)
+  // ====================================
+  SERVER: {
+    CREATE: "create_server",
+    READ: "read_server",
+    UPDATE: "update_server",
+    DELETE: "delete_server",
+    DRAIN: "drain_server", // stop accepting new shops
+    SET_DEFAULT: "set_default_server", // is_default_for_location
+  },
+
+  // ====================================
+  // Database (shared Postgres hosts; schema-per-shop)
+  // ====================================
+  DATABASE: {
+    CREATE: "create_database",
+    READ: "read_database",
+    UPDATE: "update_database",
+    DELETE: "delete_database",
+    DRAIN: "drain_database", // stop accepting new schemas
+    SET_DEFAULT: "set_default_database", // is_default host pool
+  },
+
+  // ====================================
   // Shop
   // ====================================
   SHOP: {
@@ -97,13 +121,41 @@ export const PERMISSIONS = {
   },
 
   // ====================================
-  // Shop Database
+  // Plan (catalog pricing / limits)
   // ====================================
-  SHOP_DATABASE: {
-    CREATE: "create_shop_database",
-    READ: "read_shop_database",
-    UPDATE: "update_shop_database",
-    DELETE: "delete_shop_database",
+  PLAN: {
+    CREATE: "create_plan",
+    READ: "read_plan",
+    UPDATE: "update_plan",
+    DELETE: "delete_plan",
+  },
+
+  // ====================================
+  // Payment
+  // ====================================
+  PAYMENT: {
+    READ: "read_payment",
+    VERIFY: "verify_payment",
+    REJECT: "reject_payment",
+  },
+
+  // ====================================
+  // Payment Method
+  // ====================================
+  PAYMENT_METHOD: {
+    CREATE: "create_payment_method",
+    READ: "read_payment_method",
+    UPDATE: "update_payment_method",
+    DELETE: "delete_payment_method",
+  },
+
+  // ====================================
+  // Subscription (shop subscriptions)
+  // ====================================
+  SUBSCRIPTION: {
+    READ: "read_subscription",
+    BLOCK: "block_subscription",
+    UNBLOCK: "unblock_subscription",
   },
 } as const;
 

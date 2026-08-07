@@ -51,3 +51,5 @@ logs
 
 /src/generated/prisma
 .env*.local
+
+.vscode

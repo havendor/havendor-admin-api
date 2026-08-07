@@ -20,7 +20,9 @@ public/css/main.css
 coverage
 
 # API keys and secrets
-.env
+*.env
+*.env.*
+!.env.example
 
 # Dependency directory
 node_modules
@@ -34,6 +36,8 @@ bower_components
 .DS_Store
 Thumbs.db
 
+# Ignore built ts files
+dist/**/*
 
 .vercel
 
@@ -43,3 +47,9 @@ Thumbs.db
 
 # Ignore logs
 logs
+
+
+/src/generated/prisma
+.env*.local
+
+.vscode

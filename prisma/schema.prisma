@@ -12,9 +12,72 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+ * ====================================
+ * Server enums (multi-node hosting)
+ * Multiple servers may share a location.
+ * ====================================
+ */
+
 enum ServerLocation {
   ASIA_PACIFIC
-  FRANKFURT
+  CENTRAL_EUROPE
+  NORTH_AMERICA
+  SOUTH_AMERICA
+  MIDDLE_EAST
+  AFRICA
+}
+
+enum ServerEnvironment {
+  PRODUCTION
+  STAGING
+  DEVELOPMENT
+}
+
+enum ServerHealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  MAINTENANCE
+  UNKNOWN
+}
+
+enum ServerProvider {
+  AWS
+  DIGITALOCEAN
+  VULTR
+  HETZNER
+  LINODE
+  GCP
+  AZURE
+  HOSTINGER
+  CUSTOM
+}
+
+/**
+ * ====================================
+ * Database host registry (shared Postgres)
+ * Many shops share one host; only schema differs.
+ * ====================================
+ */
+
+enum DatabaseProvider {
+  SELF_HOSTED // VPS / custom Postgres
+  NEON
+  AWS_RDS
+  SUPABASE
+  DIGITALOCEAN
+  GCP_CLOUD_SQL
+  AZURE_POSTGRES
+  CUSTOM
+}
+
+enum DatabaseSslMode {
+  DISABLE
+  PREFER
+  REQUIRE
+  VERIFY_CA
+  VERIFY_FULL
 }
 
 /**
@@ -95,6 +158,7 @@ model Admin {
   gender                     UserGender?
   identity_no                String?                   @unique
   identity_type              IdentityType?
+  is_dummy                   Boolean                   @default(false)
 
   password                 String
   status                   UserStatus @default(ACTIVE)
@@ -128,20 +192,28 @@ model Admin {
   deleted_at         DateTime?
   delete_reason      String?
 
-  sessions           AdminSession[]
-  terminated_admins  Admin[]        @relation("terminated_by")
-  deleted_admins     Admin[]        @relation("deleted_by")
-  terminated_tenants Tenant[]       @relation("tenant_terminated_by")
-  deleted_tenants    Tenant[]       @relation("tenant_deleted_by")
-  created_admins     Admin[]        @relation("created_by")
-  created_roles      Role[]         @relation("created_roles")
-  deleted_shops      Shop[]         @relation("shop_deleted_by")
+  sessions                   AdminSession[]
+  terminated_admins          Admin[]            @relation("terminated_by")
+  deleted_admins             Admin[]            @relation("deleted_by")
+  terminated_tenants         Tenant[]           @relation("tenant_terminated_by")
+  deleted_tenants            Tenant[]           @relation("tenant_deleted_by")
+  created_admins             Admin[]            @relation("created_by")
+  created_roles              Role[]             @relation("created_roles")
+  deleted_shops              Shop[]             @relation("shop_deleted_by")
+  deleted_servers            Server[]           @relation("server_deleted_by")
+  deleted_databases          Database[]         @relation("database_deleted_by")
+  deleted_payment_methods    PaymentMethod[]    @relation("payment_method_deleted_by")
+  verified_payments          Payment[]          @relation("payment_verified_by")
+  blocked_shop_subscriptions ShopSubscription[] @relation("shop_subscription_blocked_by")
 
+  // Time-aware listing: filter equality cols first, then created_at for range/sort
+  @@index([status, created_at])
+  @@index([role_id, status, created_at])
+  @@index([is_system, status, created_at])
+  @@index([deleted_at, created_at])
+  @@index([created_at])
   @@index([first_name])
   @@index([last_name])
-  @@index([role_id])
-  @@index([status])
-  @@index([created_at])
   @@map("admins")
 }
 
@@ -166,8 +238,12 @@ model AdminSession {
   expires_in   DateTime
   last_used_at DateTime? @updatedAt
   created_at   DateTime  @default(now())
+  revoked_at   DateTime?
 
-  @@index([admin_id])
+  @@index([admin_id, created_at])
+  @@index([admin_id, expires_in])
+  @@index([admin_id, revoked_at])
+  @@index([expires_in])
   @@index([created_at])
   @@map("admin_sessions")
 }
@@ -230,8 +306,10 @@ model Role {
   deleted_by_id String?
   deleted_by    Admin?    @relation("deleted_roles", fields: [deleted_by_id], references: [id])
 
+  @@index([status, created_at])
+  @@index([is_system, status, created_at])
+  @@index([deleted_at, created_at])
   @@index([created_at])
-  @@index([deleted_at])
   @@map("roles")
 }
 
@@ -265,18 +343,20 @@ model RolePermission {
 model Address {
   id String @id @default(uuid())
 
-  address_name               String
-  full_name                  String?
-  mobile                     String?
-  email                      String?
-  address_line_1             String
-  address_line_2             String?
-  city                       String?
-  state                      String?
-  zip_code                   String?
-  country                    String?
-  created_at                 DateTime @default(now())
-  updated_at                 DateTime @updatedAt
+  address_name   String
+  full_name      String?
+  mobile         String?
+  email          String?
+  address_line_1 String
+  address_line_2 String?
+  city           String?
+  state          String?
+  zip_code       String?
+  country        String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
   admin_present_addresses    Admin[]  @relation("admin_present_address")
   admin_permanent_addresses  Admin[]  @relation("admin_permanent_address")
   tenant_present_addresses   Tenant[] @relation("tenant_present_address")
@@ -284,8 +364,9 @@ model Address {
 
   @@index([mobile])
   @@index([email])
-  @@index([created_at])
   @@index([address_name])
+  @@index([deleted_at, created_at])
+  @@index([created_at])
   @@map("addresses")
 }
 
@@ -313,6 +394,7 @@ model Tenant {
   present_address      Address    @relation("tenant_present_address", fields: [present_address_id], references: [id])
   permanent_address_id String
   permanent_address    Address    @relation("tenant_permanent_address", fields: [permanent_address_id], references: [id])
+  is_dummy             Boolean    @default(false)
 
   terminated_by_id String?
   terminated_by    Admin?  @relation("tenant_terminated_by", fields: [terminated_by_id], references: [id])
@@ -329,7 +411,13 @@ model Tenant {
   delete_reason      String?
   sessions           TenantSession[]
   shops              Shop[]
+  payments           Payment[]
 
+  @@index([status, created_at])
+  @@index([is_dummy, status, created_at])
+  @@index([deleted_at, created_at])
+  @@index([terminated_at])
+  @@index([created_at])
   @@map("tenants")
 }
 
@@ -354,10 +442,167 @@ model TenantSession {
   expires_in   DateTime
   last_used_at DateTime? @updatedAt
   created_at   DateTime  @default(now())
+  revoked_at   DateTime?
 
-  @@index([tenant_id])
+  @@index([tenant_id, created_at])
+  @@index([tenant_id, expires_in])
+  @@index([tenant_id, revoked_at])
+  @@index([expires_in])
   @@index([created_at])
   @@map("tenant_sessions")
+}
+
+/**
+ * ====================================
+ * Server model
+ * Physical / cloud nodes that host shops.
+ * Many servers can live in the same
+ * ServerLocation — assign shops via
+ * server_id, pick least-loaded ACTIVE
+ * servers that still accept shops.
+ * ====================================
+ */
+
+model Server {
+  id String @id @default(uuid())
+
+  // ── Identity ─────────────────────────────────────────────────────────────────
+  name     String // human label, e.g. "Singapore Node 1"
+  slug     String  @unique // stable key, e.g. "ap-sg-01"
+  hostname String? // internal FQDN / private DNS
+
+  // ── Network ──────────────────────────────────────────────────────────────────
+  public_ip  String
+  private_ip String?
+  ipv6       String?
+  ssh_port   Int     @default(22)
+
+  // ── Placement (no uniqueness on location — scale out in-region) ──────────────
+  location          ServerLocation
+  region_code       String? // cloud region, e.g. ap-southeast-1 / fra1
+  availability_zone String? // e.g. a, 1a
+
+  // ── Capacity & shop placement ────────────────────────────────────────────────
+  // null max_shops = unlimited. Prefer lower priority, then lower current_shop_count.
+  max_shops               Int?
+  current_shop_count      Int     @default(0)
+  priority                Int     @default(100) // lower = preferred fill order
+  weight                  Int     @default(100) // optional weighted distribution
+  is_accepting_shops      Boolean @default(true) // false = drain / do not schedule new shops
+  is_default_for_location Boolean @default(false) // preferred server in that location
+
+  // ── Lifecycle & health ───────────────────────────────────────────────────────
+  status               ColumnGenericStatus @default(PENDING)
+  health_status        ServerHealthStatus  @default(UNKNOWN)
+  last_health_check_at DateTime?
+  last_seen_at         DateTime?
+
+  // ── Infra metadata ───────────────────────────────────────────────────────────
+  environment          ServerEnvironment @default(PRODUCTION)
+  provider             ServerProvider?
+  provider_instance_id String? // aws i-xxx, do droplet id, etc.
+  cpu_cores            Int?
+  memory_mb            Int?
+  disk_gb              Int?
+  os_image             String?
+  agent_version        String?
+  deploy_base_url      String? // internal provision / agent endpoint
+  labels               Json? // free-form tags { "tier": "shared", "pool": "default" }
+  metadata             Json?
+  notes                String?           @db.Text
+
+  shops Shop[]
+
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  deleted_by_id String?
+  deleted_by    Admin?    @relation("server_deleted_by", fields: [deleted_by_id], references: [id])
+
+  // Placement: pick capacity in a location
+  @@index([location, status, is_accepting_shops, priority])
+  @@index([location, is_default_for_location])
+  @@index([status, health_status, last_health_check_at])
+  // Time-aware ops lists
+  @@index([status, created_at])
+  @@index([location, status, created_at])
+  @@index([environment, status, created_at])
+  @@index([last_seen_at])
+  @@index([last_health_check_at])
+  @@index([deleted_at, created_at])
+  @@index([public_ip])
+  @@map("servers")
+}
+
+/**
+ * ====================================
+ * Database model
+ * Shared Postgres hosts. Shops share
+ * host/user/password/db_name; connection
+ * differs only by ?schema={db_schema_name}.
+ * password_encrypted: AES-GCM via ENCRYPTION_KEY.
+ * ====================================
+ */
+
+model Database {
+  id String @id @default(uuid())
+
+  // ── Identity ─────────────────────────────────────────────────────────────────
+  name     String // human label, e.g. "Primary Shop DB"
+  slug     String  @unique // stable key, e.g. "shop-db-01"
+  hostname String? // internal FQDN / private DNS
+
+  // ── Platform ─────────────────────────────────────────────────────────────────
+  provider             DatabaseProvider
+  provider_instance_id String? // neon project/branch id, rds instance id, etc.
+  environment          ServerEnvironment @default(PRODUCTION)
+
+  // ── Placement ────────────────────────────────────────────────────────────────
+  location    ServerLocation?
+  region_code String? // cloud region, e.g. ap-southeast-1
+
+  // ── Shared connection (same for all shops on this host) ──────────────────────
+  host               String
+  port               Int             @default(5432)
+  db_name            String
+  username           String
+  password_encrypted String // AES-256-GCM ciphertext (iv:tag:ciphertext base64)
+  ssl_mode           DatabaseSslMode @default(REQUIRE)
+
+  // ── Capacity & schema placement ─────────────────────────────────────────────
+  // null max_schemas = unlimited. Prefer lower priority, then lower current_schema_count.
+  max_schemas          Int?
+  current_schema_count Int     @default(0)
+  priority             Int     @default(100) // lower = preferred fill order
+  is_accepting_schemas Boolean @default(true) // false = drain / do not assign new shops
+  is_default           Boolean @default(false) // preferred host pool default
+
+  // ── Lifecycle & health ───────────────────────────────────────────────────────
+  status               ColumnGenericStatus @default(PENDING)
+  health_status        ServerHealthStatus  @default(UNKNOWN)
+  last_health_check_at DateTime?
+
+  // ── Ops metadata ─────────────────────────────────────────────────────────────
+  labels   Json? // free-form tags
+  metadata Json?
+  notes    String? @db.Text
+
+  shops Shop[]
+
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  deleted_by_id String?
+  deleted_by    Admin?    @relation("database_deleted_by", fields: [deleted_by_id], references: [id])
+
+  @@index([status, is_accepting_schemas, priority])
+  @@index([is_default, status])
+  @@index([provider, status])
+  @@index([status, health_status, last_health_check_at])
+  @@index([environment, status, created_at])
+  @@index([deleted_at, created_at])
+  @@index([host])
+  @@map("databases")
 }
 
 /**
@@ -365,6 +610,13 @@ model TenantSession {
  * Shop model
  * ====================================
  */
+
+enum ShopDbStatus {
+  PENDING
+  MIGRATING
+  READY
+  FAILED
+}
 
 model Shop {
   id String @id @default(uuid())
@@ -376,20 +628,45 @@ model Shop {
   identity    String @unique //E.G. => S00000001
   description String @db.Text
 
-  status          ColumnGenericStatus @default(PENDING)
-  server_location ServerLocation      @default(ASIA_PACIFIC)
+  status    ColumnGenericStatus @default(PENDING)
+  server_id String
+  server    Server              @relation(fields: [server_id], references: [id])
+
+  // ── Tenant schema (immutable after create — enforce in app layer) ────────────
+  database_id    String
+  database       Database @relation(fields: [database_id], references: [id])
+  db_schema_name String // e.g. shop_s00000001 — never reassigned
+
+  db_status                 ShopDbStatus @default(PENDING)
+  is_migration_completed    Boolean      @default(false)
+  last_migration_name       String?
+  last_migration_at         DateTime?
+  is_last_migration_success Boolean?
+  is_user_seeded            Boolean      @default(false)
+  is_seeding_success        Boolean?
+  last_seeding_time         DateTime?
+  db_error_message          String?      @db.Text
 
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
-  deleted_at    DateTime? @updatedAt
+  deleted_at    DateTime?
   deleted_by_id String?
   deleted_by    Admin?    @relation("shop_deleted_by", fields: [deleted_by_id], references: [id])
 
-  domains  ShopDomain[]
-  database ShopDatabase?
+  domains                ShopDomain[]
+  shopSubscriptions      ShopSubscription[]
+  payments               Payment[]
+  active_subscription_id String?            @unique
+  active_subscription    ShopSubscription?  @relation("active_shop_subscription", fields: [active_subscription_id], references: [id])
 
-  @@index([tenant_id])
-  @@index([shop_name])
+  @@unique([database_id, db_schema_name])
+  @@index([shop_name, created_at], name: "idx_shop_name_created_at")
+  @@index([tenant_id, status, created_at], name: "idx_tenant_id_status_created_at")
+  @@index([server_id, status, created_at], name: "idx_server_id_status_created_at")
+  @@index([database_id, status, created_at], name: "idx_shop_database_id_status_created_at")
+  @@index([status, created_at], name: "idx_shop_status_created_at")
+  @@index([deleted_at, created_at], name: "idx_shop_deleted_at_created_at")
+  @@index([created_at], name: "idx_shop_created_at")
   @@map("shops")
 }
 
@@ -418,7 +695,7 @@ enum DomainSSLStatus {
 model ShopDomain {
   id      String @id @default(uuid())
   shop_id String
-  shop    Shop   @relation(fields: [shop_id], references: [id])
+  shop    Shop   @relation(fields: [shop_id], references: [id], map: "shop_domain_shop_fkey")
 
   domain     String         @unique
   type       ShopDomainType
@@ -445,25 +722,707 @@ model ShopDomain {
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
-  deleted_at DateTime? @updatedAt
+  deleted_at DateTime?
 
   @@index([domain])
-  @@index([shop_id])
   @@index([shop_id, is_primary, status])
+  @@index([shop_id, created_at])
+  @@index([status, created_at])
+  @@index([ssl_status, ssl_expires_at])
+  @@index([dns_verified, last_checked_at])
+  @@index([deleted_at, created_at])
   @@map("shop_domains")
 }
 
-model ShopDatabase {
-  id      String @id @default(uuid())
-  shop_id String @unique
-  shop    Shop   @relation(fields: [shop_id], references: [id])
+// Subscription plans and related models
 
-  connection_url String
-  db_name        String
+enum PlanSlug {
+  STARTER
+  GROWTH
+  PRO
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  PAUSED
+  BLOCKED
+}
+
+enum StorageOverageStatus {
+  NONE
+  GRACE_PERIOD
+  DELETED
+}
+
+enum StaffStatus {
+  ACTIVE
+  FROZEN_PLAN_LIMIT
+  DEACTIVATED
+}
+
+enum UsageMetric {
+  ORDERS
+  STORAGE_BYTES
+}
+
+model Plan {
+  id                         String             @id @default(uuid())
+  slug                       PlanSlug           @unique
+  name                       String
+  description                String?
+  is_active                  Boolean            @default(true)
+  price_monthly              Int
+  price_yearly               Int
+  max_orders_per_month       Int?
+  max_storage_bytes          BigInt?
+  max_staff_accounts         Int?
+  max_custom_pages           Int?
+  can_use_custom_domain      Boolean            @default(false)
+  can_setup_gtm              Boolean            @default(false)
+  can_access_advanced_dash   Boolean            @default(false)
+  can_use_webhooks           Boolean            @default(false)
+  can_use_api                Boolean            @default(false)
+  can_use_advanced_analytics Boolean            @default(false)
+  has_priority_support       Boolean            @default(false)
+  created_at                 DateTime           @default(now())
+  updated_at                 DateTime           @updatedAt
+  deleted_at                 DateTime?
+  subscriptions              Subscription[]     @relation("PlanSubscriptions")
+  scheduled_for              Subscription[]     @relation("ScheduledPlan")
+  downgraded_from            Subscription[]     @relation("DowngradedFromPlan")
+  shopSubscriptions          ShopSubscription[] @relation("PlanSubscriptions")
+  scheduled_subscriptions    ShopSubscription[] @relation("ScheduledPlan")
+  downgraded_subscriptions   ShopSubscription[] @relation("DowngradedFromPlan")
+  payments                   Payment[]
+
+  @@index([is_active, created_at])
+  @@index([deleted_at, created_at])
+  @@index([created_at])
+  @@map("plans")
+}
+
+model Subscription {
+  id                           String               @id @default(uuid())
+  tenant_id                    String               @unique
+  plan_id                      String
+  plan                         Plan                 @relation("PlanSubscriptions", fields: [plan_id], references: [id])
+  status                       SubscriptionStatus   @default(TRIALING)
+  billing_interval             BillingInterval      @default(MONTHLY)
+  current_period_start         DateTime
+  current_period_end           DateTime
+  trial_ends_at                DateTime?
+  canceled_at                  DateTime?
+  scheduled_plan_id            String?
+  scheduled_plan               Plan?                @relation("ScheduledPlan", fields: [scheduled_plan_id], references: [id])
+  scheduled_plan_at            DateTime?
+  downgraded_from_plan_id      String?
+  downgraded_from_plan         Plan?                @relation("DowngradedFromPlan", fields: [downgraded_from_plan_id], references: [id])
+  downgraded_at                DateTime?
+  current_period_order_count   Int                  @default(0)
+  current_period_storage_bytes BigInt               @default(0)
+  storage_overage_status       StorageOverageStatus @default(NONE)
+  storage_grace_started_at     DateTime?
+  storage_grace_ends_at        DateTime?
+  storage_deleted_at           DateTime?
+  storage_deleted_bytes        BigInt?
+  storage_deleted_count        Int?
+  is_account_over_limit        Boolean              @default(false)
+  account_over_limit_since     DateTime?
+  external_customer_id         String?
+  external_subscription_id     String?
+  created_at                   DateTime             @default(now())
+  updated_at                   DateTime             @updatedAt
+  deleted_at                   DateTime?
+
+  @@index([status, current_period_end])
+  @@index([status, created_at])
+  @@index([plan_id, status, created_at])
+  @@index([current_period_end])
+  @@index([trial_ends_at])
+  @@index([storage_overage_status, storage_grace_ends_at])
+  @@index([deleted_at, created_at])
+  @@map("subscriptions")
+}
+
+model OverageWarning {
+  id                 String            @id @default(uuid())
+  tenant_id          String
+  subscription_id    String
+  warning_type       String
+  sent_at            DateTime          @default(now())
+  metadata           Json?
+  shopSubscription   ShopSubscription? @relation(fields: [shopSubscriptionId], references: [id])
+  shopSubscriptionId String?
+  deleted_at         DateTime?
+
+  @@index([tenant_id, sent_at])
+  @@index([subscription_id, sent_at])
+  @@index([warning_type, sent_at])
+  @@index([deleted_at, sent_at])
+  @@map("overage_warnings")
+}
+
+// =============================================================================
+// ENUMS (add these to your existing file)
+// =============================================================================
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum RefundReason {
+  DUPLICATE
+  FRAUDULENT
+  REQUESTED_BY_CUSTOMER
+  PLAN_DOWNGRADE
+}
+
+enum PaymentMethodType {
+  MANUAL
+  AUTOMATED
+}
+
+enum PaymentProvider {
+  STRIPE
+  SSLCOMMERZ
+  MANUAL
+}
+
+enum ManualVerifyStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// =============================================================================
+// PAYMENT METHOD — catalog for manual + automated (Stripe / SSLCommerz)
+// =============================================================================
+
+model PaymentMethod {
+  id              String              @id @default(uuid())
+  name            String              @unique
+  slug            String              @unique
+  type            PaymentMethodType   @default(MANUAL)
+  provider        PaymentProvider
+  description     String?             @db.Text
+  thumb_key       String?
+  thumb_bucket    String?
+  required_inputs Json?
+  status          ColumnGenericStatus @default(ACTIVE)
+  is_default      Boolean             @default(false)
+  sort_order      Int                 @default(1)
+
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  deleted_by_id String?
+  deleted_by    Admin?    @relation("payment_method_deleted_by", fields: [deleted_by_id], references: [id])
+
+  payments Payment[]
+
+  @@index([status, sort_order, created_at])
+  @@index([type, status, created_at])
+  @@index([provider, status, created_at])
+  @@index([deleted_at, created_at])
+  @@index([created_at])
+  @@map("payment_methods")
+}
+
+// =============================================================================
+// PAYMENT — canonical ledger (success + failure; never hard-delete)
+// =============================================================================
+
+model Payment {
+  id                   String            @id @default(uuid())
+  tenant_id            String
+  tenant               Tenant            @relation(fields: [tenant_id], references: [id])
+  shop_id              String
+  shop                 Shop              @relation(fields: [shop_id], references: [id])
+  shop_subscription_id String?
+  shop_subscription    ShopSubscription? @relation(fields: [shop_subscription_id], references: [id])
+  plan_id              String
+  plan                 Plan              @relation(fields: [plan_id], references: [id])
+  method_id            String
+  method               PaymentMethod     @relation(fields: [method_id], references: [id])
+
+  provider             PaymentProvider
+  status               PaymentStatus      @default(PENDING)
+  manual_verify_status ManualVerifyStatus @default(PENDING)
+  amount               Int
+  currency             String             @default("bdt")
+  billing_interval     BillingInterval
+
+  provider_transaction_id String?
+  provider_session_id     String?
+  transaction_id          String?
+  idempotency_key         String  @unique
+
+  failure_code    String?
+  failure_message String?
+
+  payment_info     Json?
+  provider_payload Json?
+  notes            String? @db.Text
+
+  verified_at          DateTime?
+  verified_by_admin_id String?
+  verified_by          Admin?    @relation("payment_verified_by", fields: [verified_by_admin_id], references: [id])
+  verify_notes         String?   @db.Text
+
+  paid_at   DateTime?
+  failed_at DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  stripe_payment_intents  StripePaymentIntent[]
+  stripe_payment_attempts StripePaymentAttempt[]
+
+  // Ledger list filters + time range / sort by created_at or paid_at
+  @@index([status, created_at])
+  @@index([provider, status, created_at])
+  @@index([manual_verify_status, created_at])
+  @@index([tenant_id, status, created_at])
+  @@index([shop_id, status, created_at])
+  @@index([method_id, status, created_at])
+  @@index([plan_id, status, created_at])
+  @@index([shop_subscription_id, created_at])
+  @@index([status, paid_at])
+  @@index([paid_at])
+  @@index([failed_at])
+  @@index([created_at])
+  @@index([provider_transaction_id])
+  @@map("payments")
+}
+
+// =============================================================================
+// SHOP SUBSCRIPTION — billing unit is now the shop
+// =============================================================================
+
+model ShopSubscription {
+  id String @id @default(uuid())
+
+  // ── Core relation: shop is the billing unit ──────────────────────────────────
+  shop_id String
+  shop    Shop   @relation(fields: [shop_id], references: [id], map: "shop_subscription_shop_fkey")
+
+  plan_id String
+  plan    Plan   @relation("PlanSubscriptions", fields: [plan_id], references: [id])
+
+  status           SubscriptionStatus @default(TRIALING)
+  billing_interval BillingInterval    @default(MONTHLY)
+
+  // ── Billing cycle ─────────────────────────────────────────────────────────────
+  current_period_start DateTime
+  current_period_end   DateTime
+  trial_ends_at        DateTime?
+  canceled_at          DateTime?
+
+  // ── Scheduled downgrade ───────────────────────────────────────────────────────
+  scheduled_plan_id String?
+  scheduled_plan    Plan?     @relation("ScheduledPlan", fields: [scheduled_plan_id], references: [id])
+  scheduled_plan_at DateTime?
+
+  // ── Downgrade audit ───────────────────────────────────────────────────────────
+  downgraded_from_plan_id String?
+  downgraded_from_plan    Plan?     @relation("DowngradedFromPlan", fields: [downgraded_from_plan_id], references: [id])
+  downgraded_at           DateTime?
+
+  // ── Live usage snapshot (reset each billing cycle) ───────────────────────────
+  current_period_order_count   Int    @default(0)
+  current_period_storage_bytes BigInt @default(0)
+
+  // ── Storage overage / grace period ───────────────────────────────────────────
+  storage_overage_status   StorageOverageStatus @default(NONE)
+  storage_grace_started_at DateTime?
+  storage_grace_ends_at    DateTime?
+  storage_deleted_at       DateTime?
+  storage_deleted_bytes    BigInt?
+  storage_deleted_count    Int?
+
+  // ── Account overage ───────────────────────────────────────────────────────────
+  is_account_over_limit    Boolean   @default(false)
+  account_over_limit_since DateTime?
+
+  // ── Payment provider convenience ─────────────────────────────────────────────
+  payment_provider PaymentProvider?
+
+  // ── Block audit ─────────────────────────────────────────────────────────────
+  blocked_at          DateTime?
+  blocked_reason      String?   @db.Text
+  blocked_by_admin_id String?
+  blocked_by          Admin?    @relation("shop_subscription_blocked_by", fields: [blocked_by_admin_id], references: [id])
+
+  // ── Stripe references (convenience — full detail in StripeSubscription) ───────
+  stripe_subscription_id String? // sub_xxxxxxxx
+  stripe_price_id        String? // price_xxxxxxxx
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
-  deleted_at DateTime? @updatedAt
+  deleted_at DateTime?
 
-  @@map("shop_databases")
+  stripe_subscription ShopStripeSubscription?
+  overage_warnings    OverageWarning[]
+  payments            Payment[]
+  active_shop         Shop?                   @relation("active_shop_subscription")
+
+  // Billing jobs + admin lists with time filters
+  @@index([shop_id, status, created_at])
+  @@index([status, created_at])
+  @@index([status, current_period_end])
+  @@index([plan_id, status, current_period_end])
+  @@index([current_period_end])
+  @@index([trial_ends_at])
+  @@index([blocked_at])
+  @@index([scheduled_plan_at])
+  @@index([payment_provider, status, created_at])
+  @@index([storage_overage_status, storage_grace_ends_at])
+  @@index([deleted_at, created_at])
+  @@index([created_at])
+  @@map("shop_subscriptions")
+}
+
+enum PaymentIntentStatus {
+  REQUIRES_PAYMENT_METHOD // no card attached yet
+  REQUIRES_CONFIRMATION // ready to confirm
+  REQUIRES_ACTION // 3DS / additional auth needed
+  PROCESSING // submitted to bank, awaiting response
+  REQUIRES_CAPTURE // authorized but not captured (manual capture flow)
+  CANCELED
+  SUCCEEDED
+}
+
+model StripePaymentIntent {
+  id                       String         @id @default(uuid())
+  stripe_customer_id_local String
+  stripe_customer          StripeCustomer @relation(fields: [stripe_customer_id_local], references: [id])
+
+  stripe_payment_intent_id String  @unique // pi_xxxxxxxxxxxxxxxx
+  stripe_invoice_id        String? // in_xxxxxxxxxxxxxxxx (if tied to an invoice)
+  stripe_charge_id         String? // ch_xxxxxxxxxxxxxxxx (created after capture)
+
+  status   PaymentIntentStatus
+  amount   Int // in cents
+  currency String              @default("usd")
+
+  // Payment method used
+  stripe_payment_method_id String? // pm_xxxxxxxxxxxxxxxx
+  card_brand               String?
+  card_last4               String?
+
+  // 3DS / next action (populated when status = REQUIRES_ACTION)
+  next_action_type         String? // e.g. 'use_stripe_sdk', 'redirect_to_url'
+  next_action_redirect_url String?
+
+  // Failure details (populated when status = CANCELED after failure)
+  failure_code        String? // e.g. 'card_declined'
+  failure_message     String? // safe to show tenant
+  cancellation_reason String? // 'duplicate', 'fraudulent', 'requested_by_customer', 'abandoned'
+
+  // Capture flow (only relevant if using manual capture)
+  capture_method    String @default("automatic") // 'automatic' or 'manual'
+  amount_capturable Int    @default(0) // only set when REQUIRES_CAPTURE
+  amount_received   Int    @default(0) // actual amount captured
+
+  payment_id String?
+  payment    Payment? @relation(fields: [payment_id], references: [id])
+
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  succeeded_at DateTime?
+  canceled_at  DateTime?
+
+  @@index([stripe_customer_id_local, created_at])
+  @@index([status, created_at])
+  @@index([status, succeeded_at])
+  @@index([payment_id, created_at])
+  @@index([stripe_invoice_id])
+  @@index([created_at])
+  @@map("stripe_payment_intents")
+}
+
+model StripeCustomer {
+  id                 String @id @default(uuid())
+  tenant_id          String @unique // tenant pays all bills, even across shops
+  stripe_customer_id String @unique // cus_xxxxxxxxxxxxxxxx
+
+  email String
+  name  String?
+  phone String?
+
+  default_payment_method_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  payment_methods    StripePaymentMethod[]
+  shop_subscriptions ShopStripeSubscription[]
+  invoices           StripeInvoice[]
+  payment_intents    StripePaymentIntent[]
+
+  @@index([tenant_id])
+  @@index([created_at])
+  @@map("stripe_customers")
+}
+
+// =============================================================================
+// STRIPE PAYMENT METHOD — on the tenant (shared across all their shops)
+// =============================================================================
+
+model StripePaymentMethod {
+  id                       String         @id @default(uuid())
+  stripe_customer_id_local String
+  stripe_customer          StripeCustomer @relation(fields: [stripe_customer_id_local], references: [id])
+
+  stripe_payment_method_id String  @unique // pm_xxxxxxxxxxxxxxxx
+  type                     String // 'card', 'sepa_debit', etc.
+  is_default               Boolean @default(false)
+
+  card_brand     String?
+  card_last4     String?
+  card_exp_month Int?
+  card_exp_year  Int?
+  card_funding   String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([stripe_customer_id_local, created_at])
+  @@index([is_default, created_at])
+  @@map("stripe_payment_methods")
+}
+
+// =============================================================================
+// SHOP STRIPE SUBSCRIPTION — one per shop, under the tenant's Stripe customer
+// =============================================================================
+
+model ShopStripeSubscription {
+  id String @id @default(uuid())
+
+  // Links to your domain subscription
+  shop_subscription_id String           @unique
+  shop_subscription    ShopSubscription @relation(fields: [shop_subscription_id], references: [id])
+
+  // Tenant is the Stripe customer (pays the bill)
+  stripe_customer_id_local String
+  stripe_customer          StripeCustomer @relation(fields: [stripe_customer_id_local], references: [id])
+
+  stripe_subscription_id String @unique // sub_xxxxxxxxxxxxxxxx
+  stripe_price_id        String // price_xxxxxxxxxxxxxxxx
+  stripe_product_id      String // prod_xxxxxxxxxxxxxxxx
+
+  status           String // mirrors Stripe status
+  billing_interval BillingInterval
+
+  current_period_start DateTime
+  current_period_end   DateTime
+  trial_start          DateTime?
+  trial_end            DateTime?
+  canceled_at          DateTime?
+  cancel_at_period_end Boolean   @default(false)
+
+  latest_stripe_invoice_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  invoices StripeInvoice[]
+
+  @@index([stripe_customer_id_local, status, current_period_end])
+  @@index([status, current_period_end])
+  @@index([current_period_end])
+  @@index([trial_end])
+  @@index([created_at])
+  @@map("shop_stripe_subscriptions")
+}
+
+// =============================================================================
+// STRIPE INVOICE — one per billing cycle per shop
+// =============================================================================
+
+model StripeInvoice {
+  id                       String         @id @default(uuid())
+  stripe_customer_id_local String
+  stripe_customer          StripeCustomer @relation(fields: [stripe_customer_id_local], references: [id])
+
+  shop_stripe_subscription_id String?
+  shop_stripe_subscription    ShopStripeSubscription? @relation(fields: [shop_stripe_subscription_id], references: [id])
+
+  stripe_invoice_id        String  @unique // in_xxxxxxxxxxxxxxxx
+  stripe_payment_intent_id String?
+
+  status           InvoiceStatus
+  amount_due       Int // in cents
+  amount_paid      Int           @default(0)
+  amount_remaining Int           @default(0)
+  currency         String        @default("usd")
+
+  period_start DateTime
+  period_end   DateTime
+
+  hosted_invoice_url String?
+  invoice_pdf_url    String?
+
+  attempt_count        Int       @default(0)
+  next_payment_attempt DateTime?
+
+  due_date  DateTime?
+  paid_at   DateTime?
+  voided_at DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  payment_attempts StripePaymentAttempt[]
+  refunds          StripeRefund[]
+
+  @@index([stripe_customer_id_local, status, created_at])
+  @@index([shop_stripe_subscription_id, created_at])
+  @@index([status, due_date])
+  @@index([status, paid_at])
+  @@index([period_end])
+  @@index([next_payment_attempt])
+  @@index([created_at])
+  @@map("stripe_invoices")
+}
+
+// =============================================================================
+// STRIPE PAYMENT ATTEMPT — every charge attempt including failures
+// =============================================================================
+
+model StripePaymentAttempt {
+  id                      String        @id @default(uuid())
+  stripe_invoice_id_local String
+  stripe_invoice          StripeInvoice @relation(fields: [stripe_invoice_id_local], references: [id])
+
+  stripe_payment_intent_id String  @unique // pi_xxxxxxxxxxxxxxxx
+  stripe_charge_id         String? // ch_xxxxxxxxxxxxxxxx
+
+  status   PaymentStatus
+  amount   Int
+  currency String        @default("usd")
+
+  stripe_payment_method_id String?
+  card_brand               String?
+  card_last4               String?
+
+  failure_code    String?
+  failure_message String?
+  decline_code    String?
+
+  payment_id String?
+  payment    Payment? @relation(fields: [payment_id], references: [id])
+
+  attempted_at DateTime  @default(now())
+  succeeded_at DateTime?
+
+  refunds StripeRefund[]
+
+  @@index([stripe_invoice_id_local, attempted_at])
+  @@index([status, attempted_at])
+  @@index([payment_id, attempted_at])
+  @@index([attempted_at])
+  @@map("stripe_payment_attempts")
+}
+
+// =============================================================================
+// STRIPE REFUND
+// =============================================================================
+
+model StripeRefund {
+  id                              String               @id @default(uuid())
+  stripe_payment_attempt_id_local String
+  stripe_payment_attempt          StripePaymentAttempt @relation(fields: [stripe_payment_attempt_id_local], references: [id])
+
+  stripe_invoice_id_local String
+  stripe_invoice          StripeInvoice @relation(fields: [stripe_invoice_id_local], references: [id])
+
+  stripe_refund_id String @unique // re_xxxxxxxxxxxxxxxx
+  stripe_charge_id String
+
+  amount   Int
+  currency String        @default("usd")
+  reason   RefundReason?
+  status   String
+  notes    String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([stripe_payment_attempt_id_local, created_at])
+  @@index([stripe_invoice_id_local, created_at])
+  @@index([created_at])
+  @@map("stripe_refunds")
+}
+
+// =============================================================================
+// STRIPE WEBHOOK EVENT LOG — idempotency guard
+// =============================================================================
+
+model StripeWebhookEvent {
+  id              String  @id @default(uuid())
+  stripe_event_id String  @unique // evt_xxxxxxxxxxxxxxxx
+  event_type      String
+  api_version     String?
+
+  payload      Json
+  processed    Boolean   @default(false)
+  processed_at DateTime?
+
+  error           String?
+  retry_count     Int       @default(0)
+  last_retried_at DateTime?
+
+  received_at DateTime @default(now())
+
+  @@index([processed, received_at])
+  @@index([event_type, received_at])
+  @@index([received_at])
+  @@map("stripe_webhook_events")
+}
+
+// =============================================================================
+// PAYMENT WEBHOOK / IPN EVENT LOG — idempotency for SSLCommerz + others
+// =============================================================================
+
+model PaymentWebhookEvent {
+  id                String          @id @default(uuid())
+  provider          PaymentProvider
+  external_event_id String          @unique
+  event_type        String?
+
+  payload      Json
+  processed    Boolean   @default(false)
+  processed_at DateTime?
+
+  error           String?
+  retry_count     Int       @default(0)
+  last_retried_at DateTime?
+
+  received_at DateTime @default(now())
+
+  @@index([provider, processed, received_at])
+  @@index([processed, received_at])
+  @@index([received_at])
+  @@map("payment_webhook_events")
 }

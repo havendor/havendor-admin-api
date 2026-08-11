@@ -105,6 +105,9 @@ export const PERMISSIONS = {
     APPROVE: "approve_shop", // PENDING → ACTIVE
     SUSPEND: "suspend_shop", // ACTIVE → INACTIVE
     RESTORE: "restore_shop", // INACTIVE → ACTIVE
+    MIGRATE_DB: "migrate_shop_db",
+    SEED_DB: "seed_shop_db",
+    MANAGE_DB: "manage_shop_db",
   },
 
   // ====================================

@@ -96,7 +96,15 @@ export default defineConfig([
       "no-console": "error",
       "no-unused-expressions": "error",
       "no-unreachable": "error",
-      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       "@typescript-eslint/consistent-type-definitions": ["error", "type"],
     },
   },

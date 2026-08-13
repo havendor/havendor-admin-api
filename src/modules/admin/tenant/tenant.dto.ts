@@ -16,7 +16,7 @@ export const tenantSchema = z.object({
   last_name: z.string().nullish(),
   email: z.email({ error: "Email is required" }),
   mobile: mobileNumberSchema,
-  alt_mobile: mobileNumberOptionalSchema,
+  alt_mobile: mobileNumberOptionalSchema.nullish().default(null),
   password: passwordSchema,
   status: z.enum([
     UserStatus.ACTIVE,
@@ -24,7 +24,7 @@ export const tenantSchema = z.object({
     UserStatus.TERMINATED,
     UserStatus.NEEDS_PASSWORD_CHANGE,
   ]),
-  profile_image: fileSchema.partial().nullable().optional(),
+  profile_image: fileSchema.partial().nullable().optional().default(null),
   bio: z.string().nullish(),
   present_address: addressSchema(),
   permanent_address: addressSchema(),

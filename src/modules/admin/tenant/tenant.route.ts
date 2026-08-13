@@ -1,8 +1,9 @@
-import { uploadAndModifyImages, validateRequest } from "@havendor/server-core";
+import { validateRequest } from "@havendor/server-core";
 import { Router } from "express";
 import appConfig from "../../../config/appConfig.js";
 import { PERMISSIONS } from "../../../const/permissions.js";
 import { adminAuthGuard } from "../../../middleware/adminAuthGuard.js";
+import { safeUploadAndModifyImages } from "../../../utility/index.js";
 import { TenantController } from "./tenant.controller.js";
 import { TenantDto } from "./tenant.dto.js";
 
@@ -11,7 +12,7 @@ const router = Router();
 router.post(
   "/",
   adminAuthGuard({ has_access_to: [PERMISSIONS.TENANT.CREATE] }),
-  ...uploadAndModifyImages([
+  ...safeUploadAndModifyImages([
     {
       name: "profile_image",
       maxCount: 1,
@@ -45,7 +46,7 @@ router.get(
 router.put(
   "/:id",
   adminAuthGuard({ has_access_to: [PERMISSIONS.TENANT.UPDATE] }),
-  ...uploadAndModifyImages([
+  ...safeUploadAndModifyImages([
     {
       name: "profile_image",
       maxCount: 1,

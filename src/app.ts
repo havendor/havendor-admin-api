@@ -59,6 +59,15 @@ export const createApp = (): Application => {
     res.redirect("/");
   });
 
+  // Health check
+  app.get(`${appConfig.PATH_PREFIX}/health`, (_req, res) => {
+    res.status(200).json({
+      status: "ok",
+      message: "OK",
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // Admin routes
   app.use(`${appConfig.PATH_PREFIX}/v1/admin`, adminRoutes);
 

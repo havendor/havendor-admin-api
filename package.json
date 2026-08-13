@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/havendor/havendor-admin-api#readme",
   "dependencies": {
-    "@havendor/server-core": "^0.25.0",
+    "@havendor/server-core": "^0.25.1",
     "@havendor/types": "^0.4.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",

@@ -53,3 +53,5 @@ logs
 .env*.local
 
 .vscode
+.husky
+.claude

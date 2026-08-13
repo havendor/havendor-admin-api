@@ -7,7 +7,8 @@ export const addressSchema = () =>
       message: "Address name can not be empty.",
     }),
     full_name: z.string().nullish(),
-    mobile: mobileNumberOptionalSchema,
+    // mobileNumberOptionalSchema alone rejects missing keys inside objects (Zod 4)
+    mobile: mobileNumberOptionalSchema.nullish(),
     email: z.email().nullish(),
     address_line_1: z.string({ error: "Address line 1 is required" }).min(1, {
       message: "Address line 1 can not be empty.",

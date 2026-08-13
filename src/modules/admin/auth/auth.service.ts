@@ -155,11 +155,12 @@ const refresh = async (payload: TRefresh) => {
       ACTION.SIGN_IN,
     );
 
-  // Generate outside transaction
+  // Generate outside transaction — keep session_id so guards can revoke the active session
   const accessToken = jwt.sign(
     {
       id: session.admin.id,
       role_id: session.admin.role_id,
+      session_id: session.id,
     },
     appConfig.JWT.secret,
     {

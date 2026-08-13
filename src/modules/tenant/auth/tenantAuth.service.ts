@@ -189,9 +189,11 @@ const refresh = async (payload: TTenantRefresh) => {
       ACTION.SIGN_IN,
     );
 
+  // Keep session_id so sign-out / session APIs work after refresh
   const accessToken = jwt.sign(
     {
       id: session.tenant.id,
+      session_id: session.id,
     },
     appConfig.JWT.secret,
     {

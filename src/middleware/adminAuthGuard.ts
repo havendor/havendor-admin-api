@@ -77,6 +77,9 @@ export const adminAuthGuard =
       };
 
       await cacheAdmin.setAdmin(payload.id, user);
+    } else {
+      // Always bind the session from the current access token (multi-device + refresh)
+      user = { ...user, session_id: payload.session_id ?? user.session_id };
     }
     if ((["INACTIVE", "DELETED", "TERMINATED"] as UserStatus[]).includes(user.status)) {
       throw new ApiError(

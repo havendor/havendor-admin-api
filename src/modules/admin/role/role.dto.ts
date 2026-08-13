@@ -29,7 +29,8 @@ const update = z.object({
   params: z.object({
     id: z.uuid({ error: "Role ID is required" }),
   }),
-  body: role.required(),
+  // Use base schema (not .required()) so defaults/transforms like is_system still apply
+  body: role,
 });
 
 const remove = z.object({

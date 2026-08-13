@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { TenantAuthRoutes } from "../modules/tenant/auth/tenantAuth.route.js";
+import { TenantPaymentRoute } from "../modules/tenant/payment/payment.route.js";
+import { TenantPlanRoute } from "../modules/tenant/plan/plan.route.js";
+import { TenantShopRoutes } from "../modules/tenant/shop/tenantShop.route.js";
 import { routeRateConfig } from "../utility/index.js";
 
 const router: Router = Router();
@@ -8,6 +11,18 @@ const routes: { path: string; route: Router }[] = [
   {
     path: "/auth",
     route: TenantAuthRoutes,
+  },
+  {
+    path: "/plans",
+    route: TenantPlanRoute,
+  },
+  {
+    path: "/shops",
+    route: TenantShopRoutes,
+  },
+  {
+    path: "/",
+    route: TenantPaymentRoute,
   },
 ];
 

@@ -6,7 +6,7 @@ import httpStatus from "http-status";
 import jwt from "jsonwebtoken";
 import { UAParser } from "ua-parser-js";
 import { cacheAdmin } from "../../../cache/index.js";
-import { appConfig } from "../../../config/index.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { ACTION } from "../../../const/index.js";
 import { UserStatus } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../utility/index.js";
@@ -57,9 +57,9 @@ const signIn = async (payload: TSignIn, request: Request) => {
 
     const accessToken = jwt.sign(
       { id: user.id, role_id: user.role_id, session_id },
-      appConfig.JWT.secret,
+      APP_CONFIG.JWT.secret,
       {
-        expiresIn: appConfig.JWT.access_expires,
+        expiresIn: APP_CONFIG.JWT.access_expires,
       },
     );
 
@@ -68,8 +68,8 @@ const signIn = async (payload: TSignIn, request: Request) => {
     const tokenHash = hash({ token: refreshToken });
 
     const refreshTokenExpiresIn = payload.remember_me
-      ? appConfig.REMEMBER_ME_EXPIRES
-      : appConfig.REFRESH_EXPIRES;
+      ? APP_CONFIG.REMEMBER_ME_EXPIRES
+      : APP_CONFIG.REFRESH_EXPIRES;
 
     const newSession = await tx.adminSession.create({
       data: {
@@ -119,7 +119,7 @@ const signIn = async (payload: TSignIn, request: Request) => {
 const refresh = async (payload: TRefresh) => {
   const FAILED_TO_REFRESH = "Failed to refresh token";
 
-  const token = payload[appConfig.ADMIN_REFRESH_TOKEN_NAME];
+  const token = payload[APP_CONFIG.ADMIN_REFRESH_TOKEN_NAME];
 
   const hashToken = hash({ token });
 
@@ -162,9 +162,9 @@ const refresh = async (payload: TRefresh) => {
       role_id: session.admin.role_id,
       session_id: session.id,
     },
-    appConfig.JWT.secret,
+    APP_CONFIG.JWT.secret,
     {
-      expiresIn: appConfig.JWT.access_expires,
+      expiresIn: APP_CONFIG.JWT.access_expires,
     },
   );
 

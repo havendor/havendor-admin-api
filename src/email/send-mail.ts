@@ -1,5 +1,5 @@
 import { sendEmail } from "@havendor/server-core";
-import { appConfig } from "../config/index.js";
+import { APP_CONFIG } from "../config/index.js";
 import { TEmailPayload } from "../type/index.js";
 
 export const sendMail = async (
@@ -7,14 +7,14 @@ export const sendMail = async (
 ): Promise<{ status: boolean; message: string }> => {
   const result = await sendEmail(
     {
-      host: appConfig.SMTP.host,
-      port: appConfig.SMTP.port,
-      user: appConfig.SMTP.user,
-      pass: appConfig.SMTP.pass,
+      host: APP_CONFIG.SMTP.host,
+      port: APP_CONFIG.SMTP.port,
+      user: APP_CONFIG.SMTP.user,
+      pass: APP_CONFIG.SMTP.pass,
       secure: false,
     },
     {
-      from: `no-replay@${appConfig.EMAIL_DOMAIN}`,
+      from: `no-replay@${APP_CONFIG.EMAIL_DOMAIN}`,
       to: payload.to,
       subject: payload.subject,
       text: payload.text,

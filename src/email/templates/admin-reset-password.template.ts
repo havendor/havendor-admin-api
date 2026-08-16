@@ -1,4 +1,4 @@
-import { appConfig } from "../../config/index.js";
+import { APP_CONFIG } from "../../config/index.js";
 
 type AdminResetPasswordEmailPayload = {
   adminName: string;
@@ -6,7 +6,7 @@ type AdminResetPasswordEmailPayload = {
   newPassword: string;
 };
 
-const loginUrl = `${appConfig.STAGING_FRONTEND_URL}/admin/auth/sign-in`;
+const loginUrl = `${APP_CONFIG.STAGING_FRONTEND_URL}/admin/auth/sign-in`;
 
 export const adminResetPasswordTemplate = ({
   adminName,

@@ -1,7 +1,7 @@
 import { passwordSchema } from "@havendor/server-core";
 import z from "zod";
 
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { tenantSchema } from "../../admin/tenant/tenant.dto.js";
 
 const signUp = z.object({
@@ -27,7 +27,7 @@ const changePassword = z
   });
 
 const refresh = z.object({
-  [appConfig.TENANT_REFRESH_TOKEN_NAME]: z.string({ error: "Refresh token is required" }),
+  [APP_CONFIG.TENANT_REFRESH_TOKEN_NAME]: z.string({ error: "Refresh token is required" }),
 });
 
 export const TenantAuthDto = {

@@ -1,6 +1,6 @@
 import { response, setCookie } from "@havendor/server-core";
 import httpStatus from "http-status";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { catchAsync } from "../../../middleware/index.js";
 import { TTenantPayload } from "../../admin/tenant/tenant.type.js";
 import { TenantAuthService } from "./tenantAuth.service.js";
@@ -25,7 +25,7 @@ const signIn = catchAsync(async (req, res) => {
   );
 
   setCookie(res, {
-    name: appConfig.TENANT_REFRESH_TOKEN_NAME,
+    name: APP_CONFIG.TENANT_REFRESH_TOKEN_NAME,
     value: refreshToken,
     options: {
       httpOnly: true,
@@ -50,7 +50,7 @@ const refresh = catchAsync(async (req, res) => {
   );
 
   setCookie(res, {
-    name: appConfig.TENANT_REFRESH_TOKEN_NAME,
+    name: APP_CONFIG.TENANT_REFRESH_TOKEN_NAME,
     value: refreshToken,
     options: {
       httpOnly: true,
@@ -83,7 +83,7 @@ const me = catchAsync(async (req, res) => {
 const signOut = catchAsync(async (req, res) => {
   await TenantAuthService.signOut(req.tenant!);
 
-  res.clearCookie(appConfig.TENANT_REFRESH_TOKEN_NAME);
+  res.clearCookie(APP_CONFIG.TENANT_REFRESH_TOKEN_NAME);
 
   return response(res, {
     status_code: httpStatus.OK,

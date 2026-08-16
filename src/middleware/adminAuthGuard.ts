@@ -2,7 +2,7 @@ import { ApiError, verifyJwt } from "@havendor/server-core";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { cacheAdmin } from "../cache/index.js";
-import { appConfig } from "../config/index.js";
+import { APP_CONFIG } from "../config/index.js";
 import { ACTION, TPermission } from "../const/index.js";
 import { UserStatus } from "../generated/prisma/index.js";
 import { TAdminCache } from "../modules/admin/admin/admin.type.js";
@@ -30,7 +30,7 @@ export const adminAuthGuard =
         ACTION.REFRESH_TOKEN,
       );
 
-    const payload = verifyJwt<TAdminJWTPayload>(token, appConfig.JWT.secret, ACTION.REFRESH_TOKEN);
+    const payload = verifyJwt<TAdminJWTPayload>(token, APP_CONFIG.JWT.secret, ACTION.REFRESH_TOKEN);
 
     let user: TAdminCache | null = await cacheAdmin.getAdmin(payload.id);
 

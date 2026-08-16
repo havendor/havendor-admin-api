@@ -1,1 +1,1 @@
-export { default as appConfig } from "./appConfig.js";
+export * from "./appConfig";

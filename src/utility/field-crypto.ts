@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import appConfig from "../config/appConfig.js";
+import { APP_CONFIG } from "../config/index.js";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12; // recommended for GCM
@@ -14,7 +14,7 @@ const deriveKey = (secret: string): Buffer => {
  * Format: base64(iv):base64(authTag):base64(ciphertext)
  */
 export const encryptSecret = (plain: string): string => {
-  const key = deriveKey(appConfig.ENCRYPTION_KEY);
+  const key = deriveKey(APP_CONFIG.ENCRYPTION_KEY);
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
 
@@ -34,7 +34,7 @@ export const decryptSecret = (payload: string): string => {
   }
 
   const [ivB64, tagB64, dataB64] = parts;
-  const key = deriveKey(appConfig.ENCRYPTION_KEY);
+  const key = deriveKey(APP_CONFIG.ENCRYPTION_KEY);
   const iv = Buffer.from(ivB64, "base64");
   const authTag = Buffer.from(tagB64, "base64");
   const ciphertext = Buffer.from(dataB64, "base64");

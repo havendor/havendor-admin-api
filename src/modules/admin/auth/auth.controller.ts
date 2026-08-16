@@ -1,6 +1,6 @@
 import { response, setCookie } from "@havendor/server-core";
 import httpStatus from "http-status";
-import { appConfig } from "../../../config/index.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { catchAsync } from "../../../middleware/index.js";
 import { AuthService } from "./auth.service.js";
 import { TSignIn } from "./auth.type.js";
@@ -10,7 +10,7 @@ const signIn = catchAsync(async (req, res) => {
   const { accessToken, refreshToken, refreshTokenExpiresIn } = await AuthService.signIn(body, req);
 
   setCookie(res, {
-    name: appConfig.ADMIN_REFRESH_TOKEN_NAME,
+    name: APP_CONFIG.ADMIN_REFRESH_TOKEN_NAME,
     value: refreshToken,
     options: {
       httpOnly: true,
@@ -35,7 +35,7 @@ const refresh = catchAsync(async (req, res) => {
   );
 
   setCookie(res, {
-    name: appConfig.ADMIN_REFRESH_TOKEN_NAME,
+    name: APP_CONFIG.ADMIN_REFRESH_TOKEN_NAME,
     value: refreshToken,
     options: {
       httpOnly: true,
@@ -68,7 +68,7 @@ const me = catchAsync(async (req, res) => {
 const signOut = catchAsync(async (req, res) => {
   await AuthService.signOut(req.admin!);
 
-  res.clearCookie(appConfig.ADMIN_REFRESH_TOKEN_NAME);
+  res.clearCookie(APP_CONFIG.ADMIN_REFRESH_TOKEN_NAME);
 
   return response(res, {
     status_code: httpStatus.OK,

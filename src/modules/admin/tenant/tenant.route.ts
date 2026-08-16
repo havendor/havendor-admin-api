@@ -1,6 +1,6 @@
 import { validateRequest } from "@havendor/server-core";
 import { Router } from "express";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { PERMISSIONS } from "../../../const/permissions.js";
 import { adminAuthGuard } from "../../../middleware/adminAuthGuard.js";
 import { safeUploadAndModifyImages } from "../../../utility/index.js";
@@ -16,7 +16,7 @@ router.post(
     {
       name: "profile_image",
       maxCount: 1,
-      bucket: appConfig.S3.DEFAULT_BUCKET,
+      bucket: APP_CONFIG.S3.DEFAULT_BUCKET,
       height: 500,
       width: 500,
       fit: "cover",
@@ -50,7 +50,7 @@ router.put(
     {
       name: "profile_image",
       maxCount: 1,
-      bucket: appConfig.S3.DEFAULT_BUCKET,
+      bucket: APP_CONFIG.S3.DEFAULT_BUCKET,
       height: 500,
       width: 500,
       fit: "cover",

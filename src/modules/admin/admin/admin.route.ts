@@ -1,6 +1,6 @@
 import { validateRequest } from "@havendor/server-core";
 import { Router } from "express";
-import { appConfig } from "../../../config/index.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { PERMISSIONS } from "../../../const/index.js";
 import { adminAuthGuard } from "../../../middleware/index.js";
 import { safeUploadAndModifyImages } from "../../../utility/index.js";
@@ -16,12 +16,12 @@ router.post(
     {
       name: "profile_image",
       maxCount: 1,
-      bucket: appConfig.S3.DEFAULT_BUCKET,
+      bucket: APP_CONFIG.S3.DEFAULT_BUCKET,
       height: 500,
       width: 500,
       fit: "cover",
     },
-    { name: "identity_document", maxCount: 1, bucket: appConfig.S3.PRIVATE_BUCKET },
+    { name: "identity_document", maxCount: 1, bucket: APP_CONFIG.S3.PRIVATE_BUCKET },
   ]),
   validateRequest(AdminDto.create),
   AdminController.createAdmin,
@@ -34,12 +34,12 @@ router.put(
     {
       name: "profile_image",
       maxCount: 1,
-      bucket: appConfig.S3.DEFAULT_BUCKET,
+      bucket: APP_CONFIG.S3.DEFAULT_BUCKET,
       height: 500,
       width: 500,
       fit: "cover",
     },
-    { name: "identity_document", maxCount: 1, bucket: appConfig.S3.PRIVATE_BUCKET },
+    { name: "identity_document", maxCount: 1, bucket: APP_CONFIG.S3.PRIVATE_BUCKET },
   ]),
   validateRequest(AdminDto.update),
   AdminController.updateAdmin,

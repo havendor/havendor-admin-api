@@ -5,7 +5,7 @@ import { Request } from "express";
 import httpStatus from "http-status";
 import jwt from "jsonwebtoken";
 import { UAParser } from "ua-parser-js";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import { ACTION } from "../../../const/actions.js";
 import { UserStatus } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../utility/prisma.js";
@@ -96,16 +96,16 @@ const signIn = async (payload: TTenantSignIn, request: Request) => {
 
     const session_id = crypto.randomUUID();
 
-    const accessToken = jwt.sign({ id: user.id, session_id }, appConfig.JWT.secret, {
-      expiresIn: appConfig.JWT.access_expires,
+    const accessToken = jwt.sign({ id: user.id, session_id }, APP_CONFIG.JWT.secret, {
+      expiresIn: APP_CONFIG.JWT.access_expires,
     });
 
     const refreshToken = crypto.randomBytes(64).toString("hex");
     const tokenHash = hash({ token: refreshToken });
 
     const refreshTokenExpiresIn = payload.remember_me
-      ? appConfig.REMEMBER_ME_EXPIRES
-      : appConfig.REFRESH_EXPIRES;
+      ? APP_CONFIG.REMEMBER_ME_EXPIRES
+      : APP_CONFIG.REFRESH_EXPIRES;
 
     const newSession = await tx.tenantSession.create({
       data: {
@@ -154,7 +154,7 @@ const signIn = async (payload: TTenantSignIn, request: Request) => {
 
 const refresh = async (payload: TTenantRefresh) => {
   const FAILED_TO_REFRESH = "Failed to refresh token";
-  const token = payload[appConfig.TENANT_REFRESH_TOKEN_NAME];
+  const token = payload[APP_CONFIG.TENANT_REFRESH_TOKEN_NAME];
   const hashToken = hash({ token });
 
   const session = await prisma.tenantSession.findFirst({
@@ -195,9 +195,9 @@ const refresh = async (payload: TTenantRefresh) => {
       id: session.tenant.id,
       session_id: session.id,
     },
-    appConfig.JWT.secret,
+    APP_CONFIG.JWT.secret,
     {
-      expiresIn: appConfig.JWT.access_expires,
+      expiresIn: APP_CONFIG.JWT.access_expires,
     },
   );
 

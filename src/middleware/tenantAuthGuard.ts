@@ -1,7 +1,7 @@
 import { ApiError, verifyJwt } from "@havendor/server-core";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import { appConfig } from "../config/index.js";
+import { APP_CONFIG } from "../config/index.js";
 import { ACTION } from "../const/index.js";
 import { UserStatus } from "../generated/prisma/index.js";
 import { TAdminJWTPayload } from "../type/index.js";
@@ -22,7 +22,7 @@ export const tenantAuthGuard =
         ACTION.REFRESH_TOKEN,
       );
 
-    const payload = verifyJwt<TAdminJWTPayload>(token, appConfig.JWT.secret, ACTION.REFRESH_TOKEN);
+    const payload = verifyJwt<TAdminJWTPayload>(token, APP_CONFIG.JWT.secret, ACTION.REFRESH_TOKEN);
 
     let liveUser;
     try {

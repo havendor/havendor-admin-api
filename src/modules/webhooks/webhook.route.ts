@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import httpStatus from "http-status";
-import appConfig from "../../config/appConfig.js";
+import { APP_CONFIG } from "../../config/index.js";
 import { catchAsync } from "../../middleware/index.js";
 import { SslCommerzProvider } from "../payment/providers/sslcommerz.provider.js";
 import { StripeProvider } from "../payment/providers/stripe.provider.js";
@@ -38,7 +38,7 @@ const redirectWithQuery = (path: string) =>
       // still redirect user
     }
     const status = body.status || "unknown";
-    const url = `${appConfig.TENANT_FRONTEND_URL}${path}?status=${encodeURIComponent(status)}&payment_id=${encodeURIComponent(body.value_a || "")}`;
+    const url = `${APP_CONFIG.TENANT_FRONTEND_URL}${path}?status=${encodeURIComponent(status)}&payment_id=${encodeURIComponent(body.value_a || "")}`;
     return res.redirect(url);
   });
 

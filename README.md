@@ -11,7 +11,7 @@ This README is designed to provide human developers and **AI Coding Agents** (An
 
 ### ⚡ Critical Rules for AI Agents
 
-1. **ESM Module System**: The project uses native ES Modules (`"type": "module"` in `package.json`). All local relative imports **MUST** include the explicit `.js` file extension (e.g., `import { appConfig } from "./config/index.js";`).
+1. **ESM Module System**: The project uses native ES Modules (`"type": "module"` in `package.json`). All local relative imports **MUST** include the explicit `.js` file extension (e.g., `import { APP_CONFIG } from "./config/index.js";`).
 2. **Prisma Client Path**: The generated Prisma client is customized to output at `src/generated/prisma`. Import Prisma client from `@prisma/client` or relative generated client path, and ensure postbuild sync (`node ./scripts/copy-prisma-client.cjs`) is executed during compilation.
 3. **Private Package Registry**: Uses private packages `@havendor/server-core` and `@havendor/types` hosted on GitHub Packages. Authentication via `.npmrc` is strictly required before running `npm install`.
 4. **Field Encryption**: Sensitive fields (e.g., database connection credentials) must be encrypted using `AES-256-GCM` with `ENCRYPTION_KEY` via `src/utility/field-crypto.ts`.
@@ -53,7 +53,7 @@ havendor-admin-api/
     ├── server.ts              # Entry point: DB connection, Redis & HTTP server startup
     ├── seed-runner.ts         # Seeding script entrypoint
     ├── config/
-    │   └── appConfig.ts       # Zod-validated application & core configuration
+    │   └── APP_CONFIG.ts       # Zod-validated application & core configuration
     ├── const/
     │   ├── actions.ts         # Shared constant definitions
     │   └── permissions.ts     # RBAC permissions registry (ALL_PERMISSIONS)
@@ -127,7 +127,7 @@ cp .env.example .env
 Key required variables in `.env`:
 
 - `DATABASE_URL`: PostgreSQL connection string.
-- `REDIS_URL`: Redis connection URL.
+- `REDIS_CACHE_URL`, `REDIS_RATE_LIMIT_URL`, `REDIS_QUEUE_URL`: Redis connection URLs for Cache, Rate Limiting, and Queues.
 - `ENCRYPTION_KEY`: 64-byte hex string (must match across Havendor services).
 - `INTERNAL_SERVICE_SECRET`: Secret string for internal service requests.
 - `JWT_SECRET`: Secret key for JWT signing.

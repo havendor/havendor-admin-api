@@ -1,6 +1,6 @@
 import { ApiError } from "@havendor/server-core";
 import httpStatus from "http-status";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import {
   BillingInterval,
   ManualVerifyStatus,
@@ -15,12 +15,12 @@ import { PaymentRecordService } from "../payment-record.service.js";
 import { SubscriptionActivationService } from "../subscription-activation.service.js";
 
 const baseUrl = () =>
-  appConfig.SSLCOMMERZ.is_live
+  APP_CONFIG.SSLCOMMERZ.is_live
     ? "https://securepay.sslcommerz.com"
     : "https://sandbox.sslcommerz.com";
 
 const ensureConfigured = () => {
-  if (!appConfig.SSLCOMMERZ.store_id || !appConfig.SSLCOMMERZ.store_password) {
+  if (!APP_CONFIG.SSLCOMMERZ.store_id || !APP_CONFIG.SSLCOMMERZ.store_password) {
     throw new ApiError(
       httpStatus.SERVICE_UNAVAILABLE,
       "SSLCommerz is not configured",
@@ -30,7 +30,7 @@ const ensureConfigured = () => {
 };
 
 const apiBase = () =>
-  `${appConfig.PUBLIC_API_BASE_URL}${appConfig.PATH_PREFIX}/v1/webhooks/sslcommerz`;
+  `${APP_CONFIG.PUBLIC_API_BASE_URL}${APP_CONFIG.PATH_PREFIX}/v1/webhooks/sslcommerz`;
 
 type InitInput = {
   payment: Payment;
@@ -50,8 +50,8 @@ const initSession = async (input: InitInput) => {
   const amount = (input.payment.amount / 100).toFixed(2);
 
   const params = new URLSearchParams({
-    store_id: appConfig.SSLCOMMERZ.store_id,
-    store_passwd: appConfig.SSLCOMMERZ.store_password,
+    store_id: APP_CONFIG.SSLCOMMERZ.store_id,
+    store_passwd: APP_CONFIG.SSLCOMMERZ.store_password,
     total_amount: amount,
     currency:
       input.payment.currency.toUpperCase() === "BDT" ? "BDT" : input.payment.currency.toUpperCase(),
@@ -122,8 +122,8 @@ const validateTransaction = async (val_id: string) => {
   ensureConfigured();
   const url = new URL(`${baseUrl()}/validator/api/validationserverAPI.php`);
   url.searchParams.set("val_id", val_id);
-  url.searchParams.set("store_id", appConfig.SSLCOMMERZ.store_id);
-  url.searchParams.set("store_passwd", appConfig.SSLCOMMERZ.store_password);
+  url.searchParams.set("store_id", APP_CONFIG.SSLCOMMERZ.store_id);
+  url.searchParams.set("store_passwd", APP_CONFIG.SSLCOMMERZ.store_password);
   url.searchParams.set("format", "json");
 
   const response = await fetch(url.toString());

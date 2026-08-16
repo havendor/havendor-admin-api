@@ -1,12 +1,12 @@
 import Stripe from "stripe";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 
 let stripeClient: Stripe | null = null;
 
 export const getStripe = () => {
-  if (!appConfig.STRIPE.secret_key) return null;
+  if (!APP_CONFIG.STRIPE.secret_key) return null;
   if (!stripeClient) {
-    stripeClient = new Stripe(appConfig.STRIPE.secret_key);
+    stripeClient = new Stripe(APP_CONFIG.STRIPE.secret_key);
   }
   return stripeClient;
 };

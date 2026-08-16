@@ -42,7 +42,7 @@ const parsedAppVars = envVarsZodSchema.parse(process.env);
 
 const envVars = { ...parsedCoreVars, ...parsedAppVars };
 
-const appConfig = {
+export const APP_CONFIG = {
   NODE_ENV: envVars.NODE_ENV,
   PORT: envVars.PORT,
   CORS_ALLOWED_ORIGINS: JSON.parse(envVars.CORS_ALLOWED_ORIGINS),
@@ -54,7 +54,9 @@ const appConfig = {
   DATABASE_URL: envVars.DATABASE_URL,
   ENCRYPTION_KEY: envVars.ENCRYPTION_KEY,
   HASH_PEPPER: envVars.HASH_PEPPER,
-  REDIS_URL: envVars.REDIS_URL,
+  REDIS_CACHE_URL: envVars.REDIS_CACHE_URL,
+  REDIS_RATE_LIMIT_URL: envVars.REDIS_RATE_LIMIT_URL,
+  REDIS_QUEUE_URL: envVars.REDIS_QUEUE_URL,
   SERVICE_NAME: envVars.SERVICE_NAME,
   ENABLE_FILE_LOGGING: envVars.ENABLE_FILE_LOGGING,
   INTERNAL_SERVICE_SECRET: envVars.INTERNAL_SERVICE_SECRET,
@@ -89,5 +91,3 @@ const appConfig = {
     is_live: envVars.SSLCOMMERZ_IS_LIVE,
   },
 } as const;
-
-export default appConfig;

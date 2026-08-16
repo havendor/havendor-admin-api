@@ -1,7 +1,7 @@
 import { ApiError } from "@havendor/server-core";
 import httpStatus from "http-status";
 import Stripe from "stripe";
-import appConfig from "../../../config/appConfig.js";
+import { APP_CONFIG } from "../../../config/index.js";
 import {
   BillingInterval,
   ManualVerifyStatus,
@@ -86,10 +86,10 @@ const createCheckoutSession = async (input: CheckoutInput) => {
     },
     success_url:
       input.successUrl ||
-      `${appConfig.TENANT_FRONTEND_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      `${APP_CONFIG.TENANT_FRONTEND_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:
       input.cancelUrl ||
-      `${appConfig.TENANT_FRONTEND_URL}/billing/cancel?payment_id=${input.payment.id}`,
+      `${APP_CONFIG.TENANT_FRONTEND_URL}/billing/cancel?payment_id=${input.payment.id}`,
   });
 
   await prisma.payment.update({
@@ -110,7 +110,7 @@ const createCheckoutSession = async (input: CheckoutInput) => {
 
 const handleWebhook = async (rawBody: Buffer, signature: string) => {
   const stripe = getStripe();
-  if (!stripe || !appConfig.STRIPE.webhook_secret) {
+  if (!stripe || !APP_CONFIG.STRIPE.webhook_secret) {
     throw new ApiError(
       httpStatus.SERVICE_UNAVAILABLE,
       "Stripe webhook is not configured",
@@ -120,7 +120,7 @@ const handleWebhook = async (rawBody: Buffer, signature: string) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, appConfig.STRIPE.webhook_secret);
+    event = stripe.webhooks.constructEvent(rawBody, signature, APP_CONFIG.STRIPE.webhook_secret);
   } catch {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid Stripe signature");
   }

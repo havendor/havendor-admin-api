@@ -1,15 +1,15 @@
 import { Logger, RedisClient } from "@havendor/server-core";
 import { Server } from "http";
 import { createApp } from "./app.js";
-import { appConfig } from "./config/index.js";
+import { APP_CONFIG } from "./config/index.js";
 const app = createApp();
 
 const bootstrap = async () => {
   await RedisClient.connect();
 
-  const server: Server = app.listen(appConfig.PORT, () => {
-    Logger.app.info(`Running on '${appConfig.NODE_ENV}' environment!`);
-    Logger.app.info(`Server is running at http://localhost:${appConfig.PORT}`);
+  const server: Server = app.listen(APP_CONFIG.PORT, () => {
+    Logger.app.info(`Running on '${APP_CONFIG.NODE_ENV}' environment!`);
+    Logger.app.info(`Server is running at http://localhost:${APP_CONFIG.PORT}`);
   });
 
   const exitHandler = (error: unknown, errorType: string) => {

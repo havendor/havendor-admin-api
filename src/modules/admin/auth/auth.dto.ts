@@ -1,6 +1,6 @@
 import { passwordSchema } from "@havendor/server-core";
 import z from "zod";
-import { appConfig } from "../../../config/index.js";
+import { APP_CONFIG } from "../../../config/index.js";
 
 const signIn = z.object({
   email: z.email({ error: "Email is required" }),
@@ -21,7 +21,7 @@ const changePassword = z
   });
 
 const refresh = z.object({
-  [appConfig.ADMIN_REFRESH_TOKEN_NAME]: z.string({ error: "Refresh token is required" }),
+  [APP_CONFIG.ADMIN_REFRESH_TOKEN_NAME]: z.string({ error: "Refresh token is required" }),
 });
 
 export const AuthDto = {

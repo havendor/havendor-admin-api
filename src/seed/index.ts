@@ -4,6 +4,8 @@ import { PERMISSIONS } from "../const/permissions.js";
 import { prisma } from "../utility/prisma.js";
 import { seedDatabase } from "./database.js";
 import { seedPaymentMethods } from "./payment-method.js";
+import { seedAddons } from "./addon.js";
+import { seedFeatures } from "./feature.js";
 import { seedPlans } from "./plan.js";
 import { seedSubscription } from "./subscription.js";
 
@@ -312,9 +314,13 @@ export const seedAdminPermissions = async () => {
       logStageComplete("Dummy Tenant", "dummy_tenant@havendor.com created");
     }
 
-    // 8. Plans
+    // 8. Features / Plans / Add-ons
+    logStageStart("Features");
+    await seedFeatures();
     logStageStart("Plans");
     await seedPlans();
+    logStageStart("Add-ons");
+    await seedAddons();
 
     // 9. Payment methods
     logStageStart("Payment Methods");

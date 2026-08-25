@@ -1,35 +1,45 @@
-// =============================================================================
-// PLAN SEED DATA
-// =============================================================================
-
 import { Logger } from "@havendor/server-core";
-import { PlanSlug, Prisma } from "../generated/prisma/index.js";
+import { PlanSlug } from "../generated/prisma/index.js";
 import { prisma } from "../utility/index.js";
+import type { FeatureKey } from "./feature.js";
 
-const PLAN_DATA: Prisma.PlanCreateInput[] = [
+type PlanFeatureSeed = {
+  key: FeatureKey;
+  enabled?: boolean;
+  limit_value?: bigint | number | null;
+};
+
+type PlanSeed = {
+  slug: PlanSlug;
+  name: string;
+  description: string;
+  is_active: boolean;
+  price_monthly: number;
+  price_yearly: number;
+  features: PlanFeatureSeed[];
+};
+
+const PLAN_DATA: PlanSeed[] = [
   {
     slug: PlanSlug.STARTER,
     name: "Starter",
     description: "Perfect for getting started. Launch your first store with essential tools.",
     is_active: true,
-
-    price_monthly: 0, // free
+    price_monthly: 0,
     price_yearly: 0,
-
-    // ── Limits ──────────────────────────────────────────────────────────────
-    max_orders_per_month: 100,
-    max_storage_bytes: BigInt(524288000), // 500 MB
-    max_staff_accounts: 1,
-    max_custom_pages: 3,
-
-    // ── Feature flags ────────────────────────────────────────────────────────
-    can_use_custom_domain: false,
-    can_setup_gtm: false,
-    can_access_advanced_dash: false,
-    can_use_webhooks: false,
-    can_use_api: false,
-    can_use_advanced_analytics: false,
-    has_priority_support: false,
+    features: [
+      { key: "orders_per_month", limit_value: 100 },
+      { key: "storage_bytes", limit_value: 524288000 },
+      { key: "staff_accounts", limit_value: 1 },
+      { key: "custom_pages", limit_value: 3 },
+      { key: "custom_domain", enabled: false },
+      { key: "gtm", enabled: false },
+      { key: "advanced_dash", enabled: false },
+      { key: "webhooks", enabled: false },
+      { key: "api", enabled: false },
+      { key: "advanced_analytics", enabled: false },
+      { key: "priority_support", enabled: false },
+    ],
   },
   {
     slug: PlanSlug.GROWTH,
@@ -37,24 +47,21 @@ const PLAN_DATA: Prisma.PlanCreateInput[] = [
     description:
       "For growing sellers who need the full stack. Unlock GTM, custom domain, and more.",
     is_active: true,
-
-    price_monthly: 2900, // $29.00
-    price_yearly: 27840, // $278.40 (~20% off)
-
-    // ── Limits ──────────────────────────────────────────────────────────────
-    max_orders_per_month: 2000,
-    max_storage_bytes: BigInt(10737418240), // 10 GB
-    max_staff_accounts: 5,
-    max_custom_pages: 20,
-
-    // ── Feature flags ────────────────────────────────────────────────────────
-    can_use_custom_domain: true,
-    can_setup_gtm: true,
-    can_access_advanced_dash: true,
-    can_use_webhooks: true,
-    can_use_api: false,
-    can_use_advanced_analytics: false,
-    has_priority_support: false,
+    price_monthly: 2900,
+    price_yearly: 27840,
+    features: [
+      { key: "orders_per_month", limit_value: 2000 },
+      { key: "storage_bytes", limit_value: 10737418240 },
+      { key: "staff_accounts", limit_value: 5 },
+      { key: "custom_pages", limit_value: 20 },
+      { key: "custom_domain", enabled: true },
+      { key: "gtm", enabled: true },
+      { key: "advanced_dash", enabled: true },
+      { key: "webhooks", enabled: true },
+      { key: "api", enabled: false },
+      { key: "advanced_analytics", enabled: false },
+      { key: "priority_support", enabled: false },
+    ],
   },
   {
     slug: PlanSlug.PRO,
@@ -62,62 +69,85 @@ const PLAN_DATA: Prisma.PlanCreateInput[] = [
     description:
       "Power sellers. No compromises. Unlimited orders, full analytics, and priority support.",
     is_active: true,
-
-    price_monthly: 7900, // $79.00
-    price_yearly: 75840, // $758.40 (~20% off)
-
-    // ── Limits (null = unlimited) ────────────────────────────────────────────
-    max_orders_per_month: null,
-    max_storage_bytes: BigInt(107374182400), // 100 GB
-    max_staff_accounts: null,
-    max_custom_pages: null,
-
-    // ── Feature flags ────────────────────────────────────────────────────────
-    can_use_custom_domain: true,
-    can_setup_gtm: true,
-    can_access_advanced_dash: true,
-    can_use_webhooks: true,
-    can_use_api: true,
-    can_use_advanced_analytics: true,
-    has_priority_support: true,
+    price_monthly: 7900,
+    price_yearly: 75840,
+    features: [
+      { key: "orders_per_month", limit_value: null },
+      { key: "storage_bytes", limit_value: 107374182400 },
+      { key: "staff_accounts", limit_value: null },
+      { key: "custom_pages", limit_value: null },
+      { key: "custom_domain", enabled: true },
+      { key: "gtm", enabled: true },
+      { key: "advanced_dash", enabled: true },
+      { key: "webhooks", enabled: true },
+      { key: "api", enabled: true },
+      { key: "advanced_analytics", enabled: true },
+      { key: "priority_support", enabled: true },
+    ],
   },
 ];
 
-// =============================================================================
-// SEEDER
-// =============================================================================
+const syncPlanFeatures = async (planId: string, features: PlanFeatureSeed[]) => {
+  const catalog = await prisma.feature.findMany({
+    where: { key: { in: features.map((f) => f.key) }, deleted_at: null },
+  });
+  const byKey = new Map(catalog.map((f) => [f.key, f]));
+
+  for (const item of features) {
+    const feature = byKey.get(item.key);
+    if (!feature) continue;
+    const limit =
+      item.limit_value === undefined
+        ? undefined
+        : item.limit_value == null
+          ? null
+          : BigInt(item.limit_value);
+    await prisma.planFeature.upsert({
+      where: {
+        plan_id_feature_id: { plan_id: planId, feature_id: feature.id },
+      },
+      create: {
+        plan_id: planId,
+        feature_id: feature.id,
+        enabled: item.enabled ?? true,
+        limit_value: limit === undefined ? null : limit,
+      },
+      update: {
+        enabled: item.enabled ?? true,
+        ...(limit !== undefined ? { limit_value: limit } : {}),
+      },
+    });
+  }
+};
 
 export const seedPlans = async () => {
   try {
-    // Fetch all slugs that already exist in the DB
-    const existingPlans = await prisma.plan.findMany({
-      select: { slug: true },
-    });
-
-    const existingSlugs = new Set(existingPlans.map((p) => p.slug));
-
-    const missingSlugs = PLAN_DATA.filter((p) => !existingSlugs.has(p.slug as PlanSlug));
-    const skipped = PLAN_DATA.length - missingSlugs.length;
-
-    if (missingSlugs.length === 0) {
-      Logger.app.info(`⏭️  Stage skip: Plans — all plans already exist (${skipped} skipped)`);
-      return;
+    let created = 0;
+    let synced = 0;
+    for (const plan of PLAN_DATA) {
+      const existing = await prisma.plan.findUnique({ where: { slug: plan.slug } });
+      let planId: string;
+      if (existing) {
+        planId = existing.id;
+        synced += 1;
+      } else {
+        const createdPlan = await prisma.plan.create({
+          data: {
+            slug: plan.slug,
+            name: plan.name,
+            description: plan.description,
+            is_active: plan.is_active,
+            price_monthly: plan.price_monthly,
+            price_yearly: plan.price_yearly,
+          },
+        });
+        planId = createdPlan.id;
+        created += 1;
+      }
+      await syncPlanFeatures(planId, plan.features);
     }
-
     Logger.app.info(
-      `⚙️  Creating ${missingSlugs.length} missing plan(s): ${missingSlugs
-        .map((p) => p.slug)
-        .join(", ")}`,
-    );
-
-    // Create only the missing ones
-    await prisma.plan.createMany({
-      data: missingSlugs,
-      skipDuplicates: true, // safety net
-    });
-
-    Logger.app.info(
-      `✅ Stage complete: Plans — ${missingSlugs.length} plan(s) created, ${skipped} skipped`,
+      `✅ Stage complete: Plans — ${created} created, ${synced} existing (features synced)`,
     );
   } catch (error) {
     Logger.app.error("❌ Plans seeding failed", error);

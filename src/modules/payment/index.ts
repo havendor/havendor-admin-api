@@ -1,4 +1,7 @@
+export * from "./addon-activation.service.js";
+export * from "./addon-block.service.js";
 export * from "./checkout.service.js";
+export * from "./fulfill-payment.service.js";
 export * from "./manual-verify.service.js";
 export * from "./payment-record.service.js";
 export * from "./payment.types.js";

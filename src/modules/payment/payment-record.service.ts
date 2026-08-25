@@ -4,20 +4,24 @@ import {
   PaymentProvider,
   PaymentStatus,
   Prisma,
+  PurchaseType,
 } from "../../generated/prisma/index.js";
 import { prisma } from "../../utility/index.js";
 
 type CreatePendingInput = {
   tenant_id: string;
   shop_id: string;
-  plan_id: string;
   method_id: string;
   provider: PaymentProvider;
   amount: number;
   currency: string;
   billing_interval: Prisma.PaymentCreateInput["billing_interval"];
   idempotency_key: string;
+  purchase_type?: PurchaseType;
+  plan_id?: string | null;
+  addon_id?: string | null;
   shop_subscription_id?: string | null;
+  shop_addon_id?: string | null;
   payment_info?: Prisma.InputJsonValue | null;
   transaction_id?: string | null;
   provider_session_id?: string | null;
@@ -35,11 +39,15 @@ const createPending = async (data: CreatePendingInput): Promise<Payment> => {
   });
   if (existing) return existing;
 
+  const purchase_type = data.purchase_type ?? PurchaseType.PLAN;
+
   return prisma.payment.create({
     data: {
       tenant_id: data.tenant_id,
       shop_id: data.shop_id,
-      plan_id: data.plan_id,
+      plan_id: data.plan_id ?? null,
+      addon_id: data.addon_id ?? null,
+      purchase_type,
       method_id: data.method_id,
       provider: data.provider,
       amount: data.amount,
@@ -47,6 +55,7 @@ const createPending = async (data: CreatePendingInput): Promise<Payment> => {
       billing_interval: data.billing_interval,
       idempotency_key: data.idempotency_key,
       shop_subscription_id: data.shop_subscription_id ?? null,
+      shop_addon_id: data.shop_addon_id ?? null,
       payment_info: data.payment_info ?? Prisma.JsonNull,
       transaction_id: data.transaction_id ?? null,
       provider_session_id: data.provider_session_id ?? null,
@@ -68,6 +77,7 @@ const markSucceeded = async (
     provider_payload?: Prisma.InputJsonValue | null;
     transaction_id?: string | null;
     shop_subscription_id?: string | null;
+    shop_addon_id?: string | null;
     manual_verify_status?: ManualVerifyStatus;
   },
 ) => {
@@ -88,6 +98,7 @@ const markSucceeded = async (
       provider_payload: extra?.provider_payload ?? undefined,
       transaction_id: extra?.transaction_id ?? existing.transaction_id,
       shop_subscription_id: extra?.shop_subscription_id ?? existing.shop_subscription_id,
+      shop_addon_id: extra?.shop_addon_id ?? existing.shop_addon_id,
       manual_verify_status: extra?.manual_verify_status ?? existing.manual_verify_status,
     },
   });

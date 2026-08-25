@@ -6,8 +6,7 @@ import {
   PaymentStatus,
 } from "../../generated/prisma/index.js";
 import { prisma } from "../../utility/index.js";
-import { PaymentRecordService } from "./payment-record.service.js";
-import { SubscriptionActivationService } from "./subscription-activation.service.js";
+import { FulfillPaymentService } from "./fulfill-payment.service.js";
 import { SubscriptionBlockService } from "./subscription-block.service.js";
 
 const verify = async (paymentId: string, adminId: string, notes?: string | null) => {
@@ -24,20 +23,8 @@ const verify = async (paymentId: string, adminId: string, notes?: string | null)
     return payment;
   }
 
-  let shopSubscriptionId = payment.shop_subscription_id;
-
   if (payment.provider === PaymentProvider.MANUAL && payment.status !== PaymentStatus.SUCCEEDED) {
-    const activated = await SubscriptionActivationService.activateForShop({
-      shop_id: payment.shop_id,
-      plan_id: payment.plan_id,
-      billing_interval: payment.billing_interval,
-      payment_provider: PaymentProvider.MANUAL,
-      shop_subscription_id: payment.shop_subscription_id,
-    });
-    shopSubscriptionId = activated.id;
-
-    await PaymentRecordService.markSucceeded(payment.id, {
-      shop_subscription_id: shopSubscriptionId,
+    await FulfillPaymentService.fulfillSucceededPayment(payment, PaymentProvider.MANUAL, {
       manual_verify_status: ManualVerifyStatus.VERIFIED,
     });
   }
@@ -49,7 +36,6 @@ const verify = async (paymentId: string, adminId: string, notes?: string | null)
       verified_at: new Date(),
       verified_by_admin_id: adminId,
       verify_notes: notes ?? null,
-      shop_subscription_id: shopSubscriptionId,
       status:
         payment.provider === PaymentProvider.MANUAL ? PaymentStatus.SUCCEEDED : payment.status,
       paid_at:
@@ -60,6 +46,7 @@ const verify = async (paymentId: string, adminId: string, notes?: string | null)
     include: {
       method: true,
       plan: true,
+      addon: true,
       shop: true,
     },
   });

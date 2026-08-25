@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "crypto";
-import { BillingInterval, Plan, PlanSlug } from "../../generated/prisma/index.js";
+import { Addon, BillingInterval, Plan, PlanSlug } from "../../generated/prisma/index.js";
 import {
   TPaymentInfoSnapshot,
   TPaymentInfoSubmit,
@@ -16,6 +16,9 @@ export const createSlug = (name: string) =>
 
 export const planAmount = (plan: Plan, interval: BillingInterval) =>
   interval === BillingInterval.YEARLY ? plan.price_yearly : plan.price_monthly;
+
+export const addonAmount = (addon: Addon, interval: BillingInterval) =>
+  interval === BillingInterval.YEARLY ? addon.price_yearly : addon.price_monthly;
 
 export const periodDates = (interval: BillingInterval, from = new Date()) => {
   const start = new Date(from);

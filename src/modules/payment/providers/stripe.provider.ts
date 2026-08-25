@@ -3,7 +3,6 @@ import httpStatus from "http-status";
 import Stripe from "stripe";
 import { APP_CONFIG } from "../../../config/index.js";
 import {
-  BillingInterval,
   ManualVerifyStatus,
   Payment,
   PaymentProvider,
@@ -12,8 +11,8 @@ import {
   Prisma,
 } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../utility/index.js";
+import { FulfillPaymentService } from "../fulfill-payment.service.js";
 import { PaymentRecordService } from "../payment-record.service.js";
-import { SubscriptionActivationService } from "../subscription-activation.service.js";
 import { periodDates } from "../utils.js";
 import { getStripe } from "./stripe.client.js";
 
@@ -150,16 +149,7 @@ const handleWebhook = async (rawBody: Buffer, signature: string) => {
       if (paymentId) {
         const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
         if (payment && payment.status !== PaymentStatus.SUCCEEDED) {
-          const activated = await SubscriptionActivationService.activateForShop({
-            shop_id: payment.shop_id,
-            plan_id: payment.plan_id,
-            billing_interval: payment.billing_interval as BillingInterval,
-            payment_provider: PaymentProvider.STRIPE,
-            shop_subscription_id: payment.shop_subscription_id,
-          });
-
-          await PaymentRecordService.markSucceeded(payment.id, {
-            shop_subscription_id: activated.id,
+          await FulfillPaymentService.fulfillSucceededPayment(payment, PaymentProvider.STRIPE, {
             provider_session_id: session.id,
             provider_transaction_id:
               typeof session.payment_intent === "string"

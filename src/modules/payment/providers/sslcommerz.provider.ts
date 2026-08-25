@@ -2,7 +2,6 @@ import { ApiError } from "@havendor/server-core";
 import httpStatus from "http-status";
 import { APP_CONFIG } from "../../../config/index.js";
 import {
-  BillingInterval,
   ManualVerifyStatus,
   Payment,
   PaymentProvider,
@@ -11,8 +10,8 @@ import {
   Prisma,
 } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../utility/index.js";
+import { FulfillPaymentService } from "../fulfill-payment.service.js";
 import { PaymentRecordService } from "../payment-record.service.js";
-import { SubscriptionActivationService } from "../subscription-activation.service.js";
 
 const baseUrl = () =>
   APP_CONFIG.SSLCOMMERZ.is_live
@@ -72,7 +71,7 @@ const initSession = async (input: InitInput) => {
     cus_phone: input.customer.phone || "01700000000",
     value_a: input.payment.id,
     value_b: input.payment.shop_id,
-    value_c: input.payment.plan_id,
+    value_c: input.payment.plan_id ?? input.payment.addon_id ?? "",
   });
 
   const response = await fetch(`${baseUrl()}/gwprocess/v4/api.php`, {
@@ -187,16 +186,7 @@ const processIpn = async (body: Record<string, string>) => {
           provider_transaction_id: body.tran_id || val_id,
         });
       } else {
-        const activated = await SubscriptionActivationService.activateForShop({
-          shop_id: payment.shop_id,
-          plan_id: payment.plan_id,
-          billing_interval: payment.billing_interval as BillingInterval,
-          payment_provider: PaymentProvider.SSLCOMMERZ,
-          shop_subscription_id: payment.shop_subscription_id,
-        });
-
-        await PaymentRecordService.markSucceeded(payment.id, {
-          shop_subscription_id: activated.id,
+        await FulfillPaymentService.fulfillSucceededPayment(payment, PaymentProvider.SSLCOMMERZ, {
           provider_transaction_id: body.tran_id || val_id,
           provider_payload: { body, validated } as unknown as Prisma.InputJsonValue,
           transaction_id: body.bank_tran_id || body.tran_id || null,

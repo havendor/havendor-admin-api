@@ -1,3 +1,4 @@
+import { invalidateShopEntitlements } from "../entitlement/entitlement.cache.js";
 import {
   BillingInterval,
   PaymentProvider,
@@ -20,7 +21,7 @@ type ActivateInput = {
 const activateForShop = async (input: ActivateInput) => {
   const periods = periodDates(input.billing_interval);
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     let subscription;
 
     if (input.shop_subscription_id) {
@@ -65,6 +66,9 @@ const activateForShop = async (input: ActivateInput) => {
 
     return subscription;
   });
+
+  await invalidateShopEntitlements(input.shop_id);
+  return result;
 };
 
 const ensurePendingSubscription = async (input: {

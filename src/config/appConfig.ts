@@ -35,6 +35,22 @@ const envVarsZodSchema = z.object({
     .transform((v) => v === "true" || v === "1"),
   TENANT_FRONTEND_URL: z.string().optional().default("http://localhost:3000"),
   PUBLIC_API_BASE_URL: z.string().optional().default("http://localhost:5000"),
+  INTERNAL_ALLOWED_IPS: z
+    .string()
+    .optional()
+    .default('["127.0.0.1","::1","::ffff:127.0.0.1"]')
+    .transform((val) => {
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed.map(String) : [String(val)];
+      } catch {
+        return val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }),
+  INTERNAL_API_KEY: z.string().optional().default(""),
 });
 
 const parsedCoreVars = coreAppEnvVars;
@@ -60,6 +76,10 @@ export const APP_CONFIG = {
   SERVICE_NAME: envVars.SERVICE_NAME,
   ENABLE_FILE_LOGGING: envVars.ENABLE_FILE_LOGGING,
   INTERNAL_SERVICE_SECRET: envVars.INTERNAL_SERVICE_SECRET,
+  INTERNAL_SECURITY: {
+    allowed_ips: envVars.INTERNAL_ALLOWED_IPS,
+    api_key: envVars.INTERNAL_API_KEY || envVars.INTERNAL_SERVICE_SECRET || "",
+  },
   SMTP: {
     user: envVars.SMTP_USER,
     pass: envVars.SMTP_PASS,

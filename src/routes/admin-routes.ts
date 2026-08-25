@@ -4,7 +4,10 @@ import { AuthRoutes } from "../modules/admin/auth/auth.route.js";
 import { DatabaseRoute } from "../modules/admin/database/database.route.js";
 import { AdminPaymentRoute } from "../modules/admin/payment/payment.route.js";
 import { PaymentMethodRoute } from "../modules/admin/payment-method/paymentMethod.route.js";
+import { AddonRoute } from "../modules/admin/addon/addon.route.js";
+import { FeatureRoute } from "../modules/admin/feature/feature.route.js";
 import { PlanRoute } from "../modules/admin/plan/plan.route.js";
+import { ShopAddonRoute } from "../modules/admin/shop-addon/shopAddon.route.js";
 import { RoleRoute } from "../modules/admin/role/role.route.js";
 import { ServerRoute } from "../modules/admin/server/server.route.js";
 import { ShopRoute } from "../modules/admin/shop/shop.route.js";
@@ -63,6 +66,18 @@ const routes: { path: string; route: Router }[] = [
   {
     path: "/plans",
     route: PlanRoute,
+  },
+  {
+    path: "/features",
+    route: FeatureRoute,
+  },
+  {
+    path: "/addons",
+    route: AddonRoute,
+  },
+  {
+    path: "/shop-addons",
+    route: ShopAddonRoute,
   },
 ];
 

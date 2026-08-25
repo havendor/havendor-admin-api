@@ -3,12 +3,19 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+const directUrl =
+  process.env["DATABASE_URL"]?.replace("-pooler", "").split("?")[0] + "?sslmode=require";
+const shadowUrl = directUrl?.replace("/havendor_admin?", "/havendor_admin_shadow?");
+
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "prisma/schema",
   migrations: {
     path: "prisma/migrations",
+    shadowDatabaseUrl: shadowUrl,
   },
   datasource: {
     url: process.env["DATABASE_URL"],
+    directUrl: directUrl,
+    shadowDatabaseUrl: shadowUrl,
   },
 });

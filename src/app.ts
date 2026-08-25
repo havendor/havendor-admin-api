@@ -9,7 +9,7 @@ import morgan from "morgan";
 import { APP_CONFIG } from "./config/index.js";
 import { enableCors } from "./middleware/index.js";
 import { stripeWebhookHandler, WebhookRoutes } from "./modules/webhooks/webhook.route.js";
-import { adminRoutes, internalRoutes, tenantRoutes } from "./routes/index.js";
+import { adminRoutes, healthRoutes, internalRoutes, tenantRoutes } from "./routes/index.js";
 
 import "./const/permissions.js";
 
@@ -59,14 +59,9 @@ export const createApp = (): Application => {
     res.redirect("/");
   });
 
-  // Health check
-  app.get(`${APP_CONFIG.PATH_PREFIX}/health`, (_req, res) => {
-    res.status(200).json({
-      status: "ok",
-      message: "OK",
-      timestamp: new Date().toISOString(),
-    });
-  });
+  // Health check routes
+  app.use(`${APP_CONFIG.PATH_PREFIX}/health`, healthRoutes);
+  app.use("/health", healthRoutes);
 
   // Admin routes
   app.use(`${APP_CONFIG.PATH_PREFIX}/v1/admin`, adminRoutes);

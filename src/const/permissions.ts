@@ -153,6 +153,34 @@ export const PERMISSIONS = {
   },
 
   // ====================================
+  // Feature registry
+  // ====================================
+  FEATURE: {
+    CREATE: "create_feature",
+    READ: "read_feature",
+    UPDATE: "update_feature",
+    DELETE: "delete_feature",
+  },
+
+  // ====================================
+  // Add-on catalog
+  // ====================================
+  ADDON: {
+    CREATE: "create_addon",
+    READ: "read_addon",
+    UPDATE: "update_addon",
+    DELETE: "delete_addon",
+  },
+
+  // ====================================
+  // Shop add-on subscriptions
+  // ====================================
+  SHOP_ADDON: {
+    READ: "read_shop_addon",
+    BLOCK: "block_shop_addon",
+    UNBLOCK: "unblock_shop_addon",
+  },
+  // ====================================
   // Subscription (shop subscriptions)
   // ====================================
   SUBSCRIPTION: {

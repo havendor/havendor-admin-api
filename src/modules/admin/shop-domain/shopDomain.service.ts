@@ -252,6 +252,24 @@ const manageSsl = async (id: string, payload: TShopDomainSslInput) => {
   });
 };
 
+const claimSSL = async (id: string) => {
+  const existing = await prisma.shopDomain.findFirst({
+    where: { id, deleted_at: null },
+  });
+  if (!existing) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Shop domain not found.");
+  }
+
+  // TODO : Implement SSL claim logic here, add queue for SSL claim and update the status accordingly.
+
+  return prisma.shopDomain.update({
+    where: { id },
+    data: {
+      ssl_status: "ACTIVE",
+    },
+  });
+};
+
 export const ShopDomainService = {
   create,
   list,
@@ -261,4 +279,5 @@ export const ShopDomainService = {
   verifyDns,
   setPrimary,
   manageSsl,
+  claimSSL,
 };

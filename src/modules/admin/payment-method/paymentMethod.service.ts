@@ -32,7 +32,6 @@ const create = async (payload: CreateBody) => {
     where: {
       OR: [{ slug }, { name: payload.name }],
       deleted_at: null,
-      status: { not: ColumnGenericStatus.DELETED },
     },
   });
 
@@ -87,7 +86,8 @@ const list = async (query: Record<string, unknown> = {}) => {
   };
 
   const and: Prisma.PaymentMethodWhereInput[] = [
-    status ? { status } : { status: { not: ColumnGenericStatus.DELETED } },
+    { deleted_at: null },
+    ...(status ? [{ status }] : []),
   ];
 
   if (search) {
@@ -129,7 +129,7 @@ const details = async (id: string) => {
   const result = await prisma.paymentMethod.findFirst({
     where: {
       id,
-      status: { not: ColumnGenericStatus.DELETED },
+      deleted_at: null,
     },
   });
   if (!result) {
@@ -142,7 +142,6 @@ const update = async (id: string, payload: Partial<CreateBody>) => {
   const existing = await prisma.paymentMethod.findFirst({
     where: {
       id,
-      status: { in: [ColumnGenericStatus.ACTIVE, ColumnGenericStatus.INACTIVE] },
       deleted_at: null,
     },
   });
@@ -187,7 +186,7 @@ const update = async (id: string, payload: Partial<CreateBody>) => {
 
 const softDelete = async (id: string, user: TAdminCache) => {
   const prev = await prisma.paymentMethod.findFirst({
-    where: { id, status: { not: ColumnGenericStatus.DELETED } },
+    where: { id, deleted_at: null },
   });
   if (!prev) {
     throw new ApiError(httpStatus.NOT_FOUND, "Failed to delete payment method.", "Not found");
@@ -198,7 +197,6 @@ const softDelete = async (id: string, user: TAdminCache) => {
     data: {
       name: `${prev.name} - Deleted - ${crypto.randomUUID()}`,
       slug: `${prev.slug}-deleted-${crypto.randomUUID().slice(0, 8)}`,
-      status: ColumnGenericStatus.DELETED,
       deleted_at: new Date(),
       deleted_by_id: user.id,
       is_default: false,

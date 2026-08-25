@@ -14,6 +14,16 @@ const list = catchAsync(async (req, res) => {
   });
 });
 
+const details = catchAsync(async (req, res) => {
+  const data = await AdminSubscriptionService.details(req.validated!.params.id);
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "Subscription details fetched successfully",
+    data,
+  });
+});
+
 const block = catchAsync(async (req, res) => {
   const data = await AdminSubscriptionService.block(
     req.validated!.params.id,
@@ -40,6 +50,7 @@ const unblock = catchAsync(async (req, res) => {
 
 export const AdminSubscriptionController = {
   list,
+  details,
   block,
   unblock,
 };

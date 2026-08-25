@@ -84,6 +84,16 @@ const manageSsl = catchAsync(async (req, res) => {
   });
 });
 
+const claimSSL = catchAsync(async (req, res) => {
+  const data = await ShopDomainService.claimSSL(req.validated!.params.id);
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "Domain SSL claimed successfully",
+    data,
+  });
+});
+
 export const ShopDomainController = {
   create,
   list,
@@ -93,4 +103,5 @@ export const ShopDomainController = {
   verifyDns,
   setPrimary,
   manageSsl,
+  claimSSL,
 };

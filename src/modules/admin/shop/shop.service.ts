@@ -3,9 +3,15 @@ import { TPaginationQuery } from "@havendor/types";
 import { randomInt } from "crypto";
 import httpStatus from "http-status";
 import { Prisma } from "../../../generated/prisma/index.js";
+import { addTenantDbMigrationJob, triggerBulkTenantDbMigration } from "../../../queues/index.js";
 import { dbQueryWithPagination, prisma } from "../../../utility/index.js";
 import { TAdminCache } from "../admin/admin.type.js";
-import { TShopCreateInput, TShopListQuery, TShopUpdateInput } from "./shop.type.js";
+import {
+  TShopBulkMigrateInput,
+  TShopCreateInput,
+  TShopListQuery,
+  TShopUpdateInput,
+} from "./shop.type.js";
 
 const generateShopIdentity = async (): Promise<string> => {
   const randomDigits = randomInt(10000000, 100000000).toString();
@@ -240,7 +246,6 @@ const softDelete = async (id: string, admin: TAdminCache) => {
       data: {
         deleted_at: new Date(),
         deleted_by_id: admin.id,
-        status: "DELETED",
       },
     });
 
@@ -268,7 +273,7 @@ const approve = async (id: string) => {
 
   return prisma.shop.update({
     where: { id },
-    data: { status: "ACTIVE" },
+    data: { status_by_admin: "ACTIVE" },
   });
 };
 
@@ -300,6 +305,46 @@ const restore = async (id: string) => {
   });
 };
 
+const queueDbMigration = async (id: string) => {
+  const shop = await prisma.shop.findFirst({
+    where: { id, deleted_at: null },
+    include: { database: true },
+  });
+  if (!shop) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Shop not found.");
+  }
+
+  if (!shop.database) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot queue migration: shop has no database host assigned.",
+    );
+  }
+
+  await prisma.shop.update({
+    where: { id: shop.id },
+    data: {
+      db_status: "PENDING",
+      db_error_message: null,
+    },
+  });
+
+  const job = await addTenantDbMigrationJob({ shop_id: id });
+
+  return {
+    job_id: job.id,
+    shop_id: shop.id,
+    shop_name: shop.shop_name,
+    db_schema_name: shop.db_schema_name,
+    db_status: "PENDING",
+  };
+};
+
+const queueBulkDbMigration = async (payload: TShopBulkMigrateInput = {}) => {
+  const result = await triggerBulkTenantDbMigration(payload?.shop_ids);
+  return result;
+};
+
 export const ShopService = {
   create,
   list,
@@ -309,4 +354,6 @@ export const ShopService = {
   approve,
   suspend,
   restore,
+  queueDbMigration,
+  queueBulkDbMigration,
 };

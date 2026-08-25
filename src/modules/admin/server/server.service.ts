@@ -219,7 +219,6 @@ const softDelete = async (id: string, admin: TAdminCache) => {
     data: {
       deleted_at: new Date(),
       deleted_by_id: admin.id,
-      status: "DELETED",
     },
   });
 };

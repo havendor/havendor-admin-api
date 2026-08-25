@@ -70,6 +70,12 @@ const manageSsl = z.object({
   }),
 });
 
+const claimSSL = z.object({
+  params: z.object({
+    id: z.uuid({ error: "Domain ID is required." }),
+  }),
+});
+
 export const ShopDomainDto = {
   create,
   update,
@@ -79,4 +85,5 @@ export const ShopDomainDto = {
   verify: single,
   setPrimary,
   manageSsl,
+  claimSSL,
 };

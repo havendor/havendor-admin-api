@@ -35,12 +35,7 @@ const databaseBaseSchema = z.object({
   is_accepting_schemas: z.boolean().optional().default(true),
   is_default: z.boolean().optional().default(false),
   status: z
-    .enum([
-      ColumnGenericStatus.ACTIVE,
-      ColumnGenericStatus.INACTIVE,
-      ColumnGenericStatus.PENDING,
-      ColumnGenericStatus.DELETED,
-    ])
+    .enum([ColumnGenericStatus.ACTIVE, ColumnGenericStatus.INACTIVE, ColumnGenericStatus.PENDING])
     .optional()
     .default(ColumnGenericStatus.PENDING),
   health_status: z.enum(ServerHealthStatus).optional().default(ServerHealthStatus.UNKNOWN),

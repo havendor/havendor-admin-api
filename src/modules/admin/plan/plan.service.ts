@@ -1,23 +1,90 @@
 import { ApiError } from "@havendor/server-core";
 import { TPaginationQuery } from "@havendor/types";
 import httpStatus from "http-status";
-import { Plan, Prisma } from "../../../generated/prisma/index.js";
+import { Prisma } from "../../../generated/prisma/index.js";
 import { dbQueryWithPagination, prisma } from "../../../utility/index.js";
 import { TPlanCreateInput, TPlanListQuery, TPlanUpdateInput } from "./plan.type.js";
 
-type TSerializedPlan = Omit<Plan, "max_storage_bytes"> & {
-  max_storage_bytes: string | null;
-};
+const planFeatureSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  description: true,
+  is_active: true,
+  price_monthly: true,
+  price_yearly: true,
+  created_at: true,
+  updated_at: true,
+  plan_features: {
+    select: {
+      enabled: true,
+      limit_value: true,
+      feature: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          description: true,
+          type: true,
+          status: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.PlanSelect;
 
-const serializePlan = (plan: Plan): TSerializedPlan => {
+const serializePlan = <
+  T extends {
+    plan_features?: Array<{
+      enabled: boolean;
+      limit_value: bigint | null;
+      feature: {
+        id: string;
+        key: string;
+        name: string;
+        description: string | null;
+        type: string;
+        status: string;
+      };
+    }>;
+  },
+>(
+  plan: T,
+) => {
+  const { plan_features, ...rest } = plan;
   return {
-    ...plan,
-    max_storage_bytes:
-      typeof plan.max_storage_bytes === "bigint" ? plan.max_storage_bytes.toString() : null,
+    ...rest,
+    features: (plan_features ?? []).map((pf) => ({
+      feature_id: pf.feature.id,
+      key: pf.feature.key,
+      name: pf.feature.name,
+      description: pf.feature.description,
+      type: pf.feature.type,
+      status: pf.feature.status,
+      enabled: pf.enabled,
+      limit_value: pf.limit_value == null ? null : pf.limit_value.toString(),
+    })),
   };
 };
 
-const create = async (payload: TPlanCreateInput): Promise<TSerializedPlan> => {
+const syncPlanFeatures = async (
+  tx: Prisma.TransactionClient,
+  planId: string,
+  features: Array<{ feature_id: string; enabled?: boolean; limit_value?: number | null }>,
+) => {
+  await tx.planFeature.deleteMany({ where: { plan_id: planId } });
+  if (!features.length) return;
+  await tx.planFeature.createMany({
+    data: features.map((f) => ({
+      plan_id: planId,
+      feature_id: f.feature_id,
+      enabled: f.enabled ?? true,
+      limit_value: f.limit_value == null ? null : BigInt(f.limit_value),
+    })),
+  });
+};
+
+const create = async (payload: TPlanCreateInput) => {
   const existingSlug = await prisma.plan.findFirst({
     where: { slug: payload.slug, deleted_at: null },
   });
@@ -25,12 +92,19 @@ const create = async (payload: TPlanCreateInput): Promise<TSerializedPlan> => {
     throw new ApiError(httpStatus.CONFLICT, "Plan with this slug already exists.");
   }
 
-  const data: Prisma.PlanCreateInput = {
-    ...payload,
-    max_storage_bytes: payload.max_storage_bytes != null ? BigInt(payload.max_storage_bytes) : null,
-  };
+  const { features, ...planData } = payload;
 
-  const plan = await prisma.plan.create({ data });
+  const plan = await prisma.$transaction(async (tx) => {
+    const created = await tx.plan.create({ data: planData });
+    if (features?.length) {
+      await syncPlanFeatures(tx, created.id, features);
+    }
+    return tx.plan.findUniqueOrThrow({
+      where: { id: created.id },
+      select: planFeatureSelect,
+    });
+  });
+
   return serializePlan(plan);
 };
 
@@ -44,7 +118,7 @@ const list = async (query: TPlanListQuery = {} as TPlanListQuery) => {
     ...(typeof is_active === "boolean" ? { is_active } : {}),
   };
 
-  const { data, meta } = await dbQueryWithPagination<Plan>({
+  const { data, meta } = await dbQueryWithPagination({
     model: prisma.plan,
     query: pagination as TPaginationQuery,
     where,
@@ -56,32 +130,11 @@ const list = async (query: TPlanListQuery = {} as TPlanListQuery) => {
       "price_yearly",
       "is_active",
     ],
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      description: true,
-      is_active: true,
-      price_monthly: true,
-      price_yearly: true,
-      max_orders_per_month: true,
-      max_storage_bytes: true,
-      max_staff_accounts: true,
-      max_custom_pages: true,
-      can_use_custom_domain: true,
-      can_setup_gtm: true,
-      can_access_advanced_dash: true,
-      can_use_webhooks: true,
-      can_use_api: true,
-      can_use_advanced_analytics: true,
-      has_priority_support: true,
-      created_at: true,
-      updated_at: true,
-    },
+    select: planFeatureSelect,
   });
 
   return {
-    data: data.map(serializePlan),
+    data: data.map((p) => serializePlan(p as never)),
     meta,
   };
 };
@@ -89,11 +142,12 @@ const list = async (query: TPlanListQuery = {} as TPlanListQuery) => {
 const details = async (id: string) => {
   const plan = await prisma.plan.findFirst({
     where: { id, deleted_at: null },
-    include: {
+    select: {
+      ...planFeatureSelect,
       _count: {
         select: {
           subscriptions: true,
-          shopSubscriptions: true,
+          shop_subscriptions: true,
         },
       },
     },
@@ -110,7 +164,7 @@ const details = async (id: string) => {
   };
 };
 
-const update = async (id: string, payload: TPlanUpdateInput): Promise<TSerializedPlan> => {
+const update = async (id: string, payload: TPlanUpdateInput) => {
   const existing = await prisma.plan.findFirst({
     where: { id, deleted_at: null },
   });
@@ -127,30 +181,32 @@ const update = async (id: string, payload: TPlanUpdateInput): Promise<TSerialize
     }
   }
 
-  const updateData: Prisma.PlanUpdateInput = {
-    ...payload,
-    ...(payload.max_storage_bytes !== undefined
-      ? {
-          max_storage_bytes:
-            payload.max_storage_bytes != null ? BigInt(payload.max_storage_bytes) : null,
-        }
-      : {}),
-  };
+  const { features, ...planData } = payload;
 
-  const updated = await prisma.plan.update({
-    where: { id },
-    data: updateData,
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.plan.update({
+      where: { id },
+      data: planData,
+    });
+    if (features) {
+      await syncPlanFeatures(tx, id, features);
+    }
+    return tx.plan.findUniqueOrThrow({
+      where: { id },
+      select: planFeatureSelect,
+    });
   });
 
   return serializePlan(updated);
 };
 
-const softDelete = async (id: string): Promise<TSerializedPlan> => {
+const softDelete = async (id: string) => {
   const existing = await prisma.plan.findFirst({
     where: { id, deleted_at: null },
-    include: {
+    select: {
+      ...planFeatureSelect,
       _count: {
-        select: { shopSubscriptions: true },
+        select: { shop_subscriptions: true },
       },
     },
   });
@@ -159,10 +215,10 @@ const softDelete = async (id: string): Promise<TSerializedPlan> => {
     throw new ApiError(httpStatus.NOT_FOUND, "Plan not found.");
   }
 
-  if (existing._count.shopSubscriptions > 0) {
+  if (existing._count.shop_subscriptions > 0) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      `Cannot delete plan. It has ${existing._count.shopSubscriptions} active shop subscription(s).`,
+      `Cannot delete plan. It has ${existing._count.shop_subscriptions} active shop subscription(s).`,
     );
   }
 
@@ -172,6 +228,7 @@ const softDelete = async (id: string): Promise<TSerializedPlan> => {
       deleted_at: new Date(),
       is_active: false,
     },
+    select: planFeatureSelect,
   });
 
   return serializePlan(deleted);

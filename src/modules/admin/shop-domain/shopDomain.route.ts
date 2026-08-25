@@ -77,4 +77,11 @@ router.patch(
   ShopDomainController.manageSsl,
 );
 
+router.post(
+  "/:id/ssl/claim",
+  adminAuthGuard({ has_access_to: [PERMISSIONS.SHOP_DOMAIN.MANAGE_SSL] }),
+  validateRequest(ShopDomainDto.claimSSL),
+  ShopDomainController.claimSSL,
+);
+
 export const ShopDomainRoute = router;

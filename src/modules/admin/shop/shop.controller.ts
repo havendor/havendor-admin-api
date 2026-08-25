@@ -84,6 +84,26 @@ const restore = catchAsync(async (req, res) => {
   });
 });
 
+const queueDbMigration = catchAsync(async (req, res) => {
+  const data = await ShopService.queueDbMigration(req.validated!.params.id);
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "Shop database migration queued successfully",
+    data,
+  });
+});
+
+const queueBulkDbMigration = catchAsync(async (req, res) => {
+  const data = await ShopService.queueBulkDbMigration(req.validated?.body || {});
+  return response(res, {
+    status_code: httpStatus.OK,
+    success: true,
+    message: "Bulk shop database migration queued successfully",
+    data,
+  });
+});
+
 export const ShopController = {
   create,
   list,
@@ -93,4 +113,6 @@ export const ShopController = {
   approve,
   suspend,
   restore,
+  queueDbMigration,
+  queueBulkDbMigration,
 };

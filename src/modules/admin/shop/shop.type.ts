@@ -5,3 +5,4 @@ export type TShopCreateInput = z.infer<typeof ShopDto.create>["body"];
 export type TShopUpdateInput = z.infer<typeof ShopDto.update>["body"];
 export type TShopListQuery = z.infer<typeof ShopDto.list>["query"];
 export type TShopIdParam = z.infer<typeof ShopDto.single>["params"];
+export type TShopBulkMigrateInput = z.infer<typeof ShopDto.bulkMigrateDb>["body"];

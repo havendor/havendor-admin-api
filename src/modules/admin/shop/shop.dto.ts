@@ -44,12 +44,7 @@ const list = z.object({
     server_id: z.uuid().optional(),
     database_id: z.uuid().optional(),
     status: z
-      .enum([
-        ColumnGenericStatus.ACTIVE,
-        ColumnGenericStatus.INACTIVE,
-        ColumnGenericStatus.PENDING,
-        ColumnGenericStatus.DELETED,
-      ])
+      .enum([ColumnGenericStatus.ACTIVE, ColumnGenericStatus.INACTIVE, ColumnGenericStatus.PENDING])
       .optional(),
   }),
 });
@@ -58,6 +53,14 @@ const single = z.object({
   params: z.object({
     id: z.uuid({ error: "Shop ID is required." }),
   }),
+});
+
+const bulkMigrateDb = z.object({
+  body: z
+    .object({
+      shop_ids: z.array(z.uuid({ error: "Invalid shop ID" })).optional(),
+    })
+    .optional(),
 });
 
 export const ShopDto = {
@@ -69,4 +72,6 @@ export const ShopDto = {
   approve: single,
   suspend: single,
   restore: single,
+  migrateDb: single,
+  bulkMigrateDb,
 };

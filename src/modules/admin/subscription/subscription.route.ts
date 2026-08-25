@@ -14,6 +14,13 @@ router.get(
   AdminSubscriptionController.list,
 );
 
+router.get(
+  "/:id",
+  adminAuthGuard({ has_access_to: [PERMISSIONS.SUBSCRIPTION.READ] }),
+  validateRequest(AdminSubscriptionDto.single),
+  AdminSubscriptionController.details,
+);
+
 router.post(
   "/:id/block",
   adminAuthGuard({ has_access_to: [PERMISSIONS.SUBSCRIPTION.BLOCK] }),

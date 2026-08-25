@@ -39,6 +39,57 @@ const list = async (query: Record<string, unknown> = {}) => {
   });
 };
 
+const details = async (id: string) => {
+  const subscription = await prisma.shopSubscription.findFirst({
+    where: { id, deleted_at: null },
+    include: {
+      plan: {
+        include: {
+          plan_features: {
+            include: { feature: true },
+          },
+        },
+      },
+      shop: {
+        select: {
+          id: true,
+          shop_name: true,
+          identity: true,
+          tenant_id: true,
+          tenant: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              mobile: true,
+            },
+          },
+        },
+      },
+      blocked_by: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+      },
+      stripe_subscription: true,
+      payments: {
+        take: 10,
+        orderBy: { created_at: "desc" },
+      },
+    },
+  });
+
+  if (!subscription) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Subscription not found");
+  }
+
+  return subscription;
+};
+
 const block = async (id: string, reason: string, adminId: string) => {
   const result = await SubscriptionBlockService.block(id, reason, adminId);
   if (!result) {
@@ -64,6 +115,7 @@ const unblock = async (id: string) => {
 
 export const AdminSubscriptionService = {
   list,
+  details,
   block,
   unblock,
 };

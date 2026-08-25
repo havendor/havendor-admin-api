@@ -1,6 +1,6 @@
 import { ApiError, buildImageUrl } from "@havendor/server-core";
 import httpStatus from "http-status";
-import { ColumnGenericStatus, Prisma } from "../../../generated/prisma/index.js";
+import { Prisma } from "../../../generated/prisma/index.js";
 import { dbQueryWithPagination, prisma } from "../../../utility/index.js";
 import { TAdminCache } from "../admin/admin.type.js";
 import { TRoleInputSchema, TRoleListQuerySchema, TRoleUpdateSchema } from "./role.type.js";
@@ -45,9 +45,10 @@ const createIntoDB = async (payload: TRoleInputSchema, user: TAdminCache) => {
 
 const updateIntoDB = async (id: string, data: TRoleUpdateSchema) => {
   const FAILED_TO_UPDATE = "Failed to update role";
-  const existingRole = await prisma.role.findUnique({
+  const existingRole = await prisma.role.findFirst({
     where: {
       id,
+      deleted_at: null,
     },
   });
   if (!existingRole) {
@@ -81,12 +82,10 @@ const updateIntoDB = async (id: string, data: TRoleUpdateSchema) => {
 };
 
 const deleteFromDB = async (id: string, user: TAdminCache) => {
-  const existingRole = await prisma.role.findUnique({
+  const existingRole = await prisma.role.findFirst({
     where: {
       id,
-      status: {
-        not: ColumnGenericStatus.DELETED,
-      },
+      deleted_at: null,
     },
     include: {
       _count: {
@@ -117,7 +116,6 @@ const deleteFromDB = async (id: string, user: TAdminCache) => {
       id,
     },
     data: {
-      status: ColumnGenericStatus.DELETED,
       deleted_at: new Date(),
       deleted_by: {
         connect: {
@@ -131,9 +129,10 @@ const deleteFromDB = async (id: string, user: TAdminCache) => {
 };
 
 const getSingleFromDB = async (id: string) => {
-  let result = await prisma.role.findUnique({
+  let result = await prisma.role.findFirst({
     where: {
       id,
+      deleted_at: null,
     },
     include: {
       permissions: {
@@ -175,7 +174,7 @@ const getSingleFromDB = async (id: string) => {
 
 const getAllFromDB = async (query: TRoleListQuerySchema) => {
   const where: Prisma.RoleWhereInput = {
-    status: { not: ColumnGenericStatus.DELETED },
+    deleted_at: null,
   };
 
   // Search

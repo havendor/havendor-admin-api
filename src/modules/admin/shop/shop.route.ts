@@ -56,6 +56,20 @@ router.delete(
   ShopController.softDelete,
 );
 
+router.post(
+  "/bulk-migrate-db",
+  adminAuthGuard({ has_access_to: [PERMISSIONS.SHOP.MIGRATE_DB] }),
+  validateRequest(ShopDto.bulkMigrateDb),
+  ShopController.queueBulkDbMigration,
+);
+
+router.post(
+  "/:id/migrate-db",
+  adminAuthGuard({ has_access_to: [PERMISSIONS.SHOP.MIGRATE_DB] }),
+  validateRequest(ShopDto.migrateDb),
+  ShopController.queueDbMigration,
+);
+
 router.patch(
   "/:id/approve",
   adminAuthGuard({ has_access_to: [PERMISSIONS.SHOP.APPROVE] }),

@@ -15,7 +15,7 @@ const create = z.object({
 
 const update = z.object({
   params: z.object({
-    id: z.string().uuid({ message: "Invalid Shop ID." }),
+    id: z.uuid({ message: "Invalid Shop ID." }),
   }),
   body: z.object({
     shop_name: z.string().optional(),
@@ -35,7 +35,7 @@ const list = z.object({
 
 const single = z.object({
   params: z.object({
-    id: z.string().uuid({ message: "Invalid Shop ID." }),
+    id: z.uuid({ message: "Invalid Shop ID." }),
   }),
 });
 

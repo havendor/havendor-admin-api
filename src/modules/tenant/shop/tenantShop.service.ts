@@ -202,7 +202,6 @@ export const softDeleteShop = async (tenantId: string, shopId: string) => {
       where: { id: shopId },
       data: {
         deleted_at: new Date(),
-        status: "DELETED",
       },
       select: shopSelectSafe,
     });

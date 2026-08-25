@@ -5,7 +5,13 @@ import { APP_CONFIG } from "../../../config/index.js";
 import { tenantSchema } from "../../admin/tenant/tenant.dto.js";
 
 const signUp = z.object({
-  body: tenantSchema,
+  body: tenantSchema.pick({
+    first_name: true,
+    last_name: true,
+    email: true,
+    mobile: true,
+    password: true,
+  }),
 });
 
 const signIn = z.object({

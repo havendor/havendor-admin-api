@@ -7,7 +7,7 @@ import { TenantAuthService } from "./tenantAuth.service.js";
 import { TTenantSignIn } from "./tenantAuth.type.js";
 
 const signUp = catchAsync(async (req, res) => {
-  const user = await TenantAuthService.signUp(req.body as TTenantPayload);
+  const user = await TenantAuthService.signUp(req.validated?.body as TTenantPayload);
 
   return response(res, {
     status_code: httpStatus.CREATED,

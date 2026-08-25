@@ -9,18 +9,18 @@ import { APP_CONFIG } from "../../../config/index.js";
 import { ACTION } from "../../../const/actions.js";
 import { UserStatus } from "../../../generated/prisma/index.js";
 import { prisma } from "../../../utility/prisma.js";
-import { TTenantPayload } from "../../admin/tenant/tenant.type.js";
 import {
   TTenantCache,
   TTenantChangePassword,
   TTenantRefresh,
   TTenantSignIn,
+  TTenantSignUp,
 } from "./tenantAuth.type.js";
 
 const FAILED_TO_SIGN_IN = "Failed to sign in";
 const MAX_SESSIONS = 3;
 
-const signUp = async (payload: TTenantPayload) => {
+const signUp = async (payload: TTenantSignUp) => {
   const isEmailExists = await prisma.tenant.findUnique({
     where: {
       email: payload.email,
@@ -39,18 +39,21 @@ const signUp = async (payload: TTenantPayload) => {
     data: {
       ...payload,
       password: hashedPassword,
-      profile_image: payload.profile_image?.key,
-      profile_image_bucket: payload.profile_image?.bucket,
-      present_address: {
-        create: {
-          ...payload.present_address,
-        },
-      },
-      permanent_address: {
-        create: {
-          ...payload.permanent_address,
-        },
-      },
+      status: UserStatus.ACTIVE,
+    },
+    omit: {
+      password: true,
+      profile_image_bucket: true,
+      present_address_id: true,
+      permanent_address_id: true,
+      updated_at: true,
+      deleted_at: true,
+      created_at: true,
+      deleted_by_id: true,
+      delete_reason: true,
+      terminated_at: true,
+      terminated_by_id: true,
+      termination_reason: true,
     },
   });
 

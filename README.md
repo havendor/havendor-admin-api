@@ -16,6 +16,7 @@ This README is designed to provide human developers and **AI Coding Agents** (An
 3. **Private Package Registry**: Uses private packages `@havendor/server-core` and `@havendor/types` hosted on GitHub Packages. Authentication via `.npmrc` is strictly required before running `npm install`.
 4. **Field Encryption**: Sensitive fields (e.g., database connection credentials) must be encrypted using `AES-256-GCM` with `ENCRYPTION_KEY` via `src/utility/field-crypto.ts`.
 5. **Permissions Catalog**: Admin actions are governed by strict RBAC permissions defined in `src/const/permissions.ts`. Always verify required permissions before creating new admin routes.
+6. **Never Edit Migration SQL Files**: NEVER manually edit existing or generated `.sql` migration files in `prisma/migrations`. When modifying models/fields in `prisma/schema`, always generate migrations via the Prisma CLI (`npx prisma migrate dev` / `prisma migrate diff`). Never edit applied or existing SQL files.
 
 ---
 
